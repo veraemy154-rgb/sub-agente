@@ -18,6 +18,8 @@ python run.py outreach owner/repo --remitente "Tu Nombre"
 python run.py evidencia --demo             # informe mensual de evidencia (retainer)
 python run.py fuentes                       # donde encontrar prospectos (enlaces listos)
 python run.py analisis owner/repo            # borrador de analisis publico para publicar
+python run.py pipeline ls                   # tablero: prospecto -> retainer
+python run.py pipeline hoy                  # a quien le toca seguimiento hoy
 ```
 
 Con Docker (VPS):
@@ -57,6 +59,7 @@ app/
   facturacion.py facturas y estado de cuenta del retainer
   analisis.py   redacta el analisis publico (credibilidad sin clientes)
   fuentes.py    16 busquedas listas para encontrar prospectos
+  pipeline.py   tablero comercial: estados, MRR, seguimientos vencidos
   main.py      API FastAPI
 templates/     SOW/autorizacion, precios, secuencia, informe mensual de evidencia
 docs/          plan-90-dias.md · legal-y-etica.md
@@ -125,3 +128,20 @@ python scripts/evidencia_mensual.py --periodo 2026-09
 
 El pipeline de seguridad que se le instala al cliente (el control CC7.1
 automatizado) esta en `templates/cliente-seguridad.yml`.
+
+### Tablero comercial
+
+Sin esto la rutina semanal se cae en tres dias: pierdes el hilo de a quien le
+escribiste y cuanto dinero hay realmente en juego.
+
+```bash
+python run.py pipeline importar             # carga los P1/P2 de out/leads.json
+python run.py pipeline add acme/api --contacto cto@acme.com
+python run.py pipeline mov acme/api respondio --nota "pregunta precio"
+python run.py pipeline ls                   # el tablero
+python run.py pipeline hoy                  # seguimientos vencidos
+python run.py pipeline stats                # MRR, embudo ponderado, tasas
+```
+
+`stats` separa el **pipeline bruto** (lo que suena bien) del **pipeline
+ponderado** (lo que probablemente cobres). Mira siempre el segundo.

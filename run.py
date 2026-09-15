@@ -23,6 +23,7 @@ from app.leadgen import puntuar_lead
 from app.evidence import generar, ejemplo, mes_actual
 from app.fuentes import filtrar, a_markdown, NIVELES
 from app.analisis import redactar, post_linkedin
+from app import pipeline as pipe
 
 
 def cmd_scan(a):
@@ -124,6 +125,65 @@ def cmd_analisis(a):
     return 0
 
 
+def cmd_pipeline(a):
+    if a.accion == "add":
+        r = pipe.add(a.repo, contacto=a.contacto, canal=a.canal,
+                     valor=a.valor, nota=a.nota, estado=a.estado, enlace=a.enlace)
+        print(r.get("error") or f"Agregado: {r['repo']} [{r['estado']}] · "
+                                f"proximo toque {r['proximo_en']}")
+        return 0
+
+    if a.accion == "mov":
+        r = pipe.mover(a.repo, a.estado, nota=a.nota, dias=a.dias)
+        if r.get("error"):
+            print(r["error"])
+            return 1
+        print(f"{r['repo']}: {r['estado']} · proximo toque {r['proximo_en'] or '—'}")
+        if r["estado"] == "retainer":
+            print(f"  MRR +US$ {r.get('mrr_usd', 0):,}")
+        return 0
+
+    if a.accion == "rm":
+        print("Eliminado" if pipe.eliminar(a.repo) else "No estaba en el pipeline")
+        return 0
+
+    if a.accion == "importar":
+        r = pipe.importar(a.desde, solo=[p.upper() for p in a.solo.split(",") if p.strip()])
+        print(r.get("error") or f"{r['importados']} importados · pipeline: {r['total']}")
+        return 0
+
+    if a.accion == "hoy":
+        ps = pipe.pendientes_hoy()
+        if not ps:
+            print("Nada pendiente hoy. Entonces te falta prospectar: "
+                  "python run.py leads --top 20")
+            return 0
+        print(f"SEGUIMIENTOS PENDIENTES: {len(ps)}\n")
+        for r in ps:
+            print(f"  {r['repo']:42} [{r['estado']}]  vence {r.get('proximo_en')}")
+        return 0
+
+    if a.accion == "stats":
+        m = pipe.metricas()
+        print(f"Registros: {m['total']}")
+        for e, n in m["por_estado"].items():
+            if n:
+                print(f"  {e:12} {n:4}  (x {int(pipe.PROB[e]*100)}% cierre)")
+        print(f"\nMRR actual:            US$ {m['mrr_usd']:,}   (anualizado {m['arr_usd']:,})")
+        print(f"Pipeline bruto:        US$ {m['pipeline_bruto_usd']:,}")
+        print(f"Pipeline ponderado:    US$ {m['pipeline_ponderado_usd']:,}  <- el numero honesto")
+        print(f"Tasa de respuesta:     {m['tasa_respuesta_pct']}%  (sana: 8-15%)")
+        print(f"Tasa de cierre:        {m['tasa_cierre_pct']}%")
+        print(f"Seguimientos vencidos: {m['pendientes_hoy']}")
+        return 0
+
+    regs = pipe.cargar()
+    if a.estado:
+        regs = [r for r in regs if r["estado"] == a.estado]
+    print(pipe.a_tabla(regs))
+    return 0
+
+
 def cmd_fuentes(a):
     nivel = a.nivel or None
     if a.md:
@@ -196,6 +256,39 @@ def main():
     n.add_argument("--no-osv", action="store_true")
     n.add_argument("--out", default="")
     n.set_defaults(fn=cmd_analisis)
+
+    pl = sub.add_parser("pipeline", help="tablero comercial: prospecto -> retainer")
+    pl.add_argument("--estado", default="", choices=pipe.ESTADOS)
+    plsub = pl.add_subparsers(dest="accion")
+    pl.set_defaults(fn=cmd_pipeline)
+
+    pa = plsub.add_parser("add", help="agregar un prospecto")
+    pa.add_argument("repo")
+    pa.add_argument("--contacto", default="")
+    pa.add_argument("--canal", default="email")
+    pa.add_argument("--valor", type=float, default=0)
+    pa.add_argument("--nota", default="")
+    pa.add_argument("--enlace", default="")
+    pa.add_argument("--estado", default="prospecto", choices=pipe.ESTADOS)
+
+    pm = plsub.add_parser("mov", help="mover de estado")
+    pm.add_argument("repo")
+    pm.add_argument("estado", choices=pipe.ESTADOS)
+    pm.add_argument("--nota", default="")
+    pm.add_argument("--dias", type=int, default=None)
+
+    pr = plsub.add_parser("rm", help="quitar del pipeline")
+    pr.add_argument("repo")
+
+    pi = plsub.add_parser("importar", help="cargar out/leads.json")
+    pi.add_argument("--desde", default="out/leads.json")
+    pi.add_argument("--solo", default="P1,P2")
+
+    pls = plsub.add_parser("ls", help="ver el tablero")
+    pls.add_argument("--estado", default="", choices=pipe.ESTADOS)
+
+    plsub.add_parser("hoy", help="seguimientos vencidos")
+    plsub.add_parser("stats", help="metricas del embudo")
 
     a = p.parse_args()
     raise SystemExit(a.fn(a))
