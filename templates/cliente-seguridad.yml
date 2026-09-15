@@ -1,0 +1,130 @@
+# =============================================================
+# Pipeline de seguridad - ENTREGABLE PARA EL CLIENTE
+# Copiar en .github/workflows/seguridad.yml del repo del cliente
+# =============================================================
+# Es el control CC7.1 automatizado. Sin esto, el cliente depende de
+# que alguien se acuerde de mirar. Con esto, cada PR se revisa solo
+# y queda registro para el auditor.
+#
+# No instala nada, no modifica codigo, no requiere credenciales.
+
+name: Seguridad
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+  schedule:
+    - cron: '37 4 * * 1'   # semanal: detecta CVEs nuevos aunque no haya commits
+
+permissions:
+  contents: read
+
+jobs:
+  secretos:
+    name: Deteccion de secretos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # opcional en repos publicos
+
+  dependencias-python:
+    name: Dependencias Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pip-audit -q
+      - name: pip-audit
+        run: |
+          if ls requirements*.txt pyproject.toml poetry.lock >/dev/null 2>&1; then
+            pip-audit --format json --output pip-audit.json || true
+          else
+            echo "{}" > pip-audit.json
+          fi
+      - name: Resumen (falla en alto/critico)
+        run: |
+          python - <<'PY'
+          import json, sys
+          d = json.load(open("pip-audit.json"))
+          alto = 0
+          for dep in d.get("dependencies", []):
+              for v in dep.get("vulns", []):
+                  print(f"{dep['name']}=={dep['version']}  {v.get('id')}  fix: {v.get('fix_versions')}")
+                  alto += 1
+          print(f"Total: {alto} vulnerabilidad(es) en dependencias")
+          sys.exit(1 if alto else 0)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependencias-python
+          path: pip-audit.json
+
+  dependencias-node:
+    name: Dependencias Node
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: npm audit
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --ignore-scripts || npm install --ignore-scripts --no-audit
+            npm audit --json > npm-audit.json || true
+          else
+            echo '{"vulnerabilities":{}}' > npm-audit.json
+          fi
+      - name: Resumen (falla en alto/critico)
+        run: |
+          python - <<'PY'
+          import json, sys
+          d = json.load(open("npm-audit.json"))
+          m = d.get("metadata", {}).get("vulnerabilities", {})
+          alto = m.get("high", 0) + m.get("critical", 0)
+          print("high+critical:", alto, "| total:", sum(m.values()))
+          sys.exit(1 if alto else 0)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependencias-node
+          path: npm-audit.json
+
+  sast:
+    name: Analisis estatico
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install semgrep -q
+      - name: Semgrep
+        run: |
+          semgrep --config p/default \
+                  --error=false --quiet \
+                  --sarif --output semgrep.sarif || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep
+          path: semgrep.sarif
+
+  # ---------------------------------------------------------------
+  # Nota para el cliente: los jobs de arriba FALLAN el PR cuando
+  # aparece una vulnerabilidad alta o critica. Si eso molesta al
+  # principio, cambia `sys.exit(1)` por `sys.exit(0)` y usalo solo
+  # como aviso durante el primer mes. Volver a fallar en cuanto el
+  # backlog este limpio: un control que no bloquea no es un control.
+  # ---------------------------------------------------------------

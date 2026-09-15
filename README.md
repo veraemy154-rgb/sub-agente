@@ -51,6 +51,8 @@ app/
   leadgen.py   descubrimiento y priorizacion comercial de prospectos
   outreach.py  mensajes de primer contacto (5 toques)
   evidence.py  informe mensual de evidencia para el retainer
+  snapshots.py estado historico de hallazgos: detecta que se cerro y que aparecio
+  facturacion.py facturas y estado de cuenta del retainer
   main.py      API FastAPI
 templates/     SOW/autorizacion, precios, secuencia, informe mensual de evidencia
 docs/          plan-90-dias.md · legal-y-etica.md
@@ -88,3 +90,30 @@ trabajo de remediación. Ver `docs/legal-y-etica.md` antes de escribirle a nadie
 - `templates/precios.md` — escalera de precios y manejo de objeciones.
 - `templates/sow-autorizacion.md` — firmar antes de tocar cualquier sistema.
 - `templates/secuencia-outreach.md` — como prospectar.
+
+## Automatizacion mensual (lo que hace que el retainer no dependa de ti)
+
+El dia 1 de cada mes, `.github/workflows/evidencia-mensual.yml` ejecuta:
+
+```bash
+python scripts/evidencia_mensual.py        # escanea, compara y emite
+```
+
+Para cada cliente de `clientes.json`:
+
+1. Escanea sus repos.
+2. Compara contra el estado guardado en `out/estado/` -> sabe que se cerro,
+   que aparecio y con que antiguedad (MTTR real, no inventado).
+3. Escribe el informe de evidencia en `out/evidencia/`.
+4. Escribe la factura en `out/facturas/`.
+5. Imprime el MRR del mes.
+
+Tu trabajo queda en revisar, firmar y enviar. Cuatro horas al mes por cliente.
+
+```bash
+cp clientes.ejemplo.json clientes.json   # clientes.json va en .gitignore
+python scripts/evidencia_mensual.py --periodo 2026-09
+```
+
+El pipeline de seguridad que se le instala al cliente (el control CC7.1
+automatizado) esta en `templates/cliente-seguridad.yml`.
