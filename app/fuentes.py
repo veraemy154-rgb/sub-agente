@@ -47,6 +47,56 @@ FUENTES: list[tuple[str, int, str, str, str, str]] = [
          "SOC 2 auditor OR compliance consultant OR vCISO"),
      "EL CANAL MAS INFRAVALORADO. Trabaja por referencia. Mensaje en templates/mensaje-lanzamiento.md #5."),
 
+    ("reddit-saas", 1, "Reddit r/SaaS: 'security questionnaire'",
+     "Fundadores a los que un cliente enterprise ya les pidio el cuestionario",
+     "https://www.reddit.com/r/SaaS/search/?q=security%20questionnaire&restrict_sr=1&sort=new",
+     "Filtra por New. Responde en el hilo sin vender: el DM va despues."),
+
+    ("reddit-soc2-new", 1, "Reddit: SOC 2 mas reciente",
+     "La senal mas caliente, ordenada por fecha",
+     "https://www.reddit.com/search/?q=SOC%202&sort=new",
+     "sort=new es obligatorio: una queja de hace 3 meses ya contrato a alguien."),
+
+    ("reddit-soc2-saas", 1, "Reddit r/SaaS: SOC 2",
+     "El subreddit con mejor densidad de compradores",
+     "https://www.reddit.com/r/SaaS/search/?q=SOC%202&restrict_sr=1&sort=new",
+     "Lee el hilo antes de escribir: si el problema es de verdad, aporta la solucion ahi mismo."),
+
+    ("reddit-startups", 1, "Reddit r/startups: cuestionario de seguridad",
+     "Mas ruido que r/SaaS, pero mas volumen",
+     "https://www.reddit.com/r/startups/search/?q=security%20questionnaire%20OR%20SOC%202&restrict_sr=1&sort=new",
+     "Filtra por New y por comentarios recientes."),
+
+    ("reddit-devops", 1, "Reddit r/devops: cumplimiento",
+     "Quien lo implementa, no quien decide: sirve para llegar al CTO",
+     "https://www.reddit.com/r/devops/search/?q=SOC%202%20OR%20compliance&restrict_sr=1&sort=new",
+     "Aqui el que pregunta es tecnico. Aporta y pregunta quien decide."),
+
+    ("reddit-engmanagers", 1, "Reddit r/ExperiencedDevs y r/engineeringmanagers",
+     "Gente senior con presupuesto de herramientas",
+     "https://www.reddit.com/r/ExperiencedDevs/search/?q=security%20OR%20compliance&restrict_sr=1&sort=new",
+     "Menos volumen, mas decision. Buenos para el retainer, no para el diagnostico."),
+
+    ("li-contenido-semana", 1, "LinkedIn: publicaciones de la ultima semana",
+     "Gente que publico sobre su auditoria hace dias",
+     "https://www.linkedin.com/search/results/content/?keywords=SOC%202&sortBy=%22date_posted%22",
+     "Elige 'Publicaciones' y 'Ultima semana'. Comenta con sustancia antes del DM."),
+
+    ("li-cuestionario", 1, "LinkedIn: 'security questionnaire'",
+     "La frase exacta del que ya esta trabado",
+     "https://www.linkedin.com/search/results/content/?keywords=security%20questionnaire",
+     "Mucho mas caliente que buscar 'SOC 2': quien dice esto ya tiene el correo del cliente."),
+
+    ("li-empleos-semana", 1, "LinkedIn: ofertas de empleo de la ultima semana",
+     "Si contratan, hay presupuesto y dolor reconocido",
+     "https://www.linkedin.com/jobs/search?keywords=SOC%202%20OR%20security%20compliance&f_TPR=r604800",
+     "LA MEJOR SENAL DE PRESUPUESTO. El que busca su PRIMER ingeniero de seguridad no tiene a nadie."),
+
+    ("li-personas", 1, "LinkedIn: personas con SOC 2 en el perfil",
+     "CTOs y heads of engineering en proceso",
+     "https://www.linkedin.com/search/results/people/?keywords=SOC%202%20CTO%20startup",
+     "Filtra por tu region o por empresas de 11-50 empleados."),
+
     # ---------------- NIVEL 2: senal de presupuesto -----------------------
     ("empleos-sec", 2, "Ofertas de empleo de seguridad/compliance",
      "Si estan contratando, hay presupuesto aprobado y dolor reconocido",
