@@ -46,7 +46,13 @@ def buscar_repos(lang: str, icp: dict, token: str | None = None, por_pagina: int
            f"&sort=updated&order=desc&per_page={por_pagina}")
     data, st = _get(url, token)
     if st != 200:
-        print(f"  ! busqueda '{lang}' fallo (HTTP {st}): {data.get('_msg','')}")
+        if data.get("_rate_limit"):
+            print("  ! LIMITE DE TASA de GitHub alcanzado (sin token: 60 peticiones/hora).")
+            print("    Crea uno en github.com/settings/tokens (sin permisos, solo public_repo)")
+            print("    y ejecuta:  export GITHUB_TOKEN=ghp_tu_token")
+            print("    Para que quede fijo:  echo 'export GITHUB_TOKEN=ghp_...' >> ~/.bashrc")
+        else:
+            print(f"  ! busqueda '{lang}' fallo (HTTP {st}): {data.get('_msg','')}")
         return []
     return [{
         "repo": r["full_name"],

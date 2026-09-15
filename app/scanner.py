@@ -11,6 +11,7 @@ que le resuelve una auditoria al cliente. Ahi esta el margen.
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.error
 import urllib.parse
@@ -21,6 +22,11 @@ API = "https://api.github.com"
 OSV = "https://api.osv.dev/v1/querybatch"
 UA = {"User-Agent": "sub-agente-auditor/1.0 (+contacto previa autorizacion)"}
 
+# Sin token, GitHub permite 60 peticiones/hora y 10 de busqueda por minuto.
+# En una IP movil (Termux, datos) eso se agota en minutos y el scan devuelve
+# basura en lugar de datos. Con token: 5.000 por hora.
+TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or None
+
 # ---------------------------------------------------------------- red
 
 _CACHE: dict[str, tuple] = {}
@@ -28,6 +34,7 @@ _CACHE: dict[str, tuple] = {}
 
 def _get(path: str, token: str | None = None, timeout: int = 20):
     url = path if path.startswith("http") else API + path
+    token = token or TOKEN
     ck = f"GET {url}"
     if ck in _CACHE:
         return _CACHE[ck]
@@ -40,7 +47,14 @@ def _get(path: str, token: str | None = None, timeout: int = 20):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             out = (json.loads(r.read().decode("utf-8", "replace")), r.status)
     except urllib.error.HTTPError as e:
-        out = ({"_error": e.code, "_msg": e.reason}, e.code)
+        # Leemos el cuerpo: GitHub explica ahi si es limite de tasa o falta de permiso.
+        try:
+            cuerpo = json.loads(e.read().decode("utf-8", "replace"))
+        except Exception:
+            cuerpo = {}
+        msg = cuerpo.get("message") or e.reason
+        out = ({"_error": e.code, "_msg": msg,
+                "_rate_limit": "rate limit" in str(msg).lower()}, e.code)
     except Exception as e:  # red caida, timeout, DNS
         out = ({"_error": 0, "_msg": str(e)}, 0)
     if out[1] == 200:

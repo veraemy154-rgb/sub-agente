@@ -99,6 +99,7 @@ trabajo de remediación. Ver `docs/legal-y-etica.md` antes de escribirle a nadie
 - `templates/secuencia-outreach.md` — como prospectar.
 - `templates/testimonios.md` — como conseguir testimonios reales sin regalar el trabajo.
 - `templates/mensaje-lanzamiento.md` — mensajes de la oferta de lanzamiento a contactos templados.
+- `docs/termux.md` — cómo correrlo en Termux (Android) y arreglar una copia modificada.
 - `docs/fuentes-de-prospectos.md` — los 4 niveles de fuentes y la rutina semanal.
 - `templates/analisis-publico.md` — el analisis publico: que nunca publicar y como distribuirlo.
 
