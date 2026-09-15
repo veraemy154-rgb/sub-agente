@@ -32,6 +32,7 @@ W = {
     "infra": 5,
     "presion_compliance": 18,
     "tamano_ideal": 14,
+    "consumo_no_b2b": -14,
     "demasiado_grande": -35,
     "seguridad_ya_resuelta": -30,
 }
@@ -80,7 +81,7 @@ RECHAZO_NOMBRE = [
     # Proyectos de comunidad y educativos: muchisimas estrellas, cero comprador.
     r"algorithm", r"^public[-_]apis", r"curated", r"^learn", r"^learn[-_]",
     r"build[-_]your[-_]own", r"^resources$", r"^tools$", r"handbook",
-    r"^ossu", r"^study", r"^edu", r"^bootcamp", r"^projects$", r"^project[-_]based",
+    r"^ossu", r"^study", r"^edu", r"^bootcamp", r"^projects$", r"^project[-_]based", r"[-_]community$", r"^community[-_]",
 ]
 # Multinacionales y plataformas: aunque el repo satelite sea pequeno (pocos
 # contribuyentes, pocos repos), detras hay un equipo de seguridad corporativo.
@@ -95,6 +96,18 @@ GRANDES = [
     "vmware", "broadcom", "qualcomm", "samsung", "huawei", "alibaba", "tencent",
     "baidu", "bytedance", "lenovo", "dell", "datadog", "splunk", "cloudflare",
     "twilio", "crowdstrike", "paloalto", "okta", "vercel", "supabase", "posthog",
+    # Grandes corporaciones no tecnologicas: presencia minima en GitHub pero
+    # departamentos de seguridad enormes. petrobras/ross colo entero.
+    "petrobras", "pemex", "ecopetrol", "vale", "repsol", "eni", "shell", "bp",
+    "chevron", "exxon", "totalenergies", "equinor", "sinopec", "gazprom",
+    "telefonica", "movistar", "vodafone", "orange", "telcel", "claro", "entel",
+    "santander", "bbva", "itau", "bradesco", "caixa", "bancolombia", "mercantil",
+    "bancoestado", "hsbc", "citibank", "jpmorgan", "goldman", "wellsfargo",
+    "boeing", "airbus", "embraer", "siemens", "bosch", "philips", "unilever",
+    "nestle", "pepsico", "cocacola", "walmart", "carrefour", "mercadolibre",
+    "sony", "panasonic", "toyota", "volkswagen", "ford", "general motors",
+    "pfizer", "novartis", "roche", "bayer", "basf", "dupont", "arcelormittal",
+    "gerdau", "cemex", "eletrobras", "copel", "isa", "ecopetrol",
 ]
 
 # Academia: mucho codigo publico, cero presupuesto de seguridad.
@@ -105,6 +118,12 @@ ACADEMICO_TEXTO = [
     "lms", "universidad", "university", "computing science", "cs course",
 ]
 ACADEMICO_DOMINIO = [".edu", ".edu.", ".ac.", ".ac.", ".gouv", ".gov"]
+
+# Dominios de consumo/juego: no son B2B, no hay cuestionario de seguridad.
+CONSUMO_TLD = [".games", ".store", ".shop", ".fun", ".xyz", ".club",
+               ".blog", ".online", ".site", ".top", ".space"]
+CONSUMO_SITIO = ["steamcommunity", "steampowered", "itch.io", "moddb",
+                 "nexusmods", "curseforge", "reddit.com", "discord.gg"]
 UNIVERSIDADES = [r"\bnyu\b", r"\bmit\b", r"\bstanford\b", r"\bberkeley\b",
                  r"\bcmu\b", r"\bcaltech\b", r"\bharvard\b", r"\btandon\b",
                  r"\bpolytechnic\b", r"\bpolitecnico\b", r"\buniversidad\b",
@@ -173,6 +192,15 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
         return {"repo": repo_full, "veredicto": "DESCARTAR", "motivo": rechazo,
                 "score_icp": 0, "senales": []}
 
+    # El patron de exclusion tambien aplica al DUENO: openbase-community
+    # se colaba porque el repo se llama "openbase", no "openbase-community".
+    login0 = (meta.get("owner") or {}).get("login", "")
+    rechazo_dueno = es_descartable(login0, "")
+    if rechazo_dueno:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "owner": login0,
+                "motivo": f"dueno excluido ({rechazo_dueno})"}
+
     estrellas = meta.get("stargazers_count", 0) or 0
     if estrellas > ESTRELLAS_MAX_VENDIBLE:
         return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
@@ -210,6 +238,14 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
     contrib, _ = _get(f"/repos/{repo_full}/contributors?per_page=100&anon=false")
     n_contrib = len(contrib) if isinstance(contrib, list) else 0
 
+    # Suelo duro: 1 sola persona no es una empresa. No hay quien compre.
+    if n_contrib < 2:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "estrellas": estrellas, "owner": login,
+                "sitio": sitio, "contribuyentes": n_contrib,
+                "repos_publicos": n_repos,
+                "motivo": f"un solo contribuyente: es una persona, no una empresa"}
+
     # Rechazo duro por tamano de equipo. Igual que arriba: por regla.
     if n_contrib > CONTRIB_MAX_VENDIBLE:
         return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
@@ -242,6 +278,9 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
 
     if es_org:
         add("es_organizacion", "es una organizacion (hay estructura)")
+    if (any(t in (sitio or "").lower() for t in CONSUMO_TLD)
+            or any(t in (sitio or "").lower() for t in CONSUMO_SITIO)):
+        add("consumo_no_b2b", "dominio de consumo/juego: no vende a empresas")
     if sitio:
         add("sitio_web", f"tiene sitio propio ({sitio[:40]})")
     email = org_meta.get("email") or ""
@@ -308,7 +347,7 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
         "estrellas": estrellas,
         "descripcion": descripcion[:200],
         "senales": senales,
-        "score_icp": max(0, score),
+        "score_icp": max(0, min(100, score)),
         "veredicto": veredicto,
         "presion_compliance": bool(compliance),
         "motivo": "",
@@ -324,10 +363,12 @@ def resuelto_o_no(rep: dict) -> bool:
 def prioridad_final(score_riesgo: int, score_icp: int, compliance: bool) -> tuple[str, str]:
     """Combina dolor tecnico y capacidad de pago."""
     s = score_riesgo * 0.45 + score_icp * 0.55 + (15 if compliance else 0)
-    if s >= 60:
-        return "P1", f"Contactar esta semana (indice {s:.0f}). Dolor alto + capacidad de pago."
-    if s >= 42:
-        return "P2", f"Secuencia automatizada (indice {s:.0f})."
-    if s >= 28:
+    # Umbrales altos a proposito: si todo es P1, la prioridad no sirve.
+    # P1 tiene que significar "este va hoy", no "este paso el filtro".
+    if s >= 72:
+        return "P1", f"Contactar HOY (indice {s:.0f}). Dolor alto + capacidad de pago."
+    if s >= 58:
+        return "P2", f"Secuencia esta semana (indice {s:.0f})."
+    if s >= 44:
         return "P3", f"Nurturing, reauditar en 60 dias (indice {s:.0f})."
     return "DESCARTAR", f"Sin encaje comercial (indice {s:.0f})."
