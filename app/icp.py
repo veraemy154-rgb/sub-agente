@@ -43,6 +43,12 @@ CONTRIB_MAX_VENDIBLE = 50
 REPOS_MIN_IDEAL, REPOS_MAX_IDEAL = 5, 45
 REPOS_MAX_VENDIBLE = 60
 
+# Un proyecto de comunidad famoso no es un prospecto: no tiene dueno que
+# compre, no tiene presupuesto y, si llega a tenerlo, contrata una firma
+# grande. Que salga por REGLA, no por puntaje: si depende de restar puntos,
+# un dia cuela uno y te hace perder la manana.
+ESTRELLAS_MAX_VENDIBLE = 10000
+
 B2B_KEYWORDS = [
     "dashboard", "workspace", "team", "teams", "collaborat", "seats", "seat-based",
     "billing", "subscription", "subscribe", "pricing", "plan", "plans", "invoice",
@@ -71,6 +77,10 @@ RECHAZO_NOMBRE = [
     r"^tutorial", r"^curso", r"^course", r"^book", r"^notes", r"^apuntes",
     r"^lista", r"^roadmap", r"^interview", r"^leetcode", r"^cheatsheet",
     r"browser[-_]extension", r"extension[-_]", r"^wallpaper", r"^theme", r"^icon",
+    # Proyectos de comunidad y educativos: muchisimas estrellas, cero comprador.
+    r"algorithm", r"^public[-_]apis", r"curated", r"^learn", r"^learn[-_]",
+    r"build[-_]your[-_]own", r"^resources$", r"^tools$", r"handbook",
+    r"^ossu", r"^study", r"^edu", r"^bootcamp", r"^projects$", r"^project[-_]based",
 ]
 RECHAZO_TEXTO = [
     "ctf", "capture the flag", "malware", "exploit", "payload", "reverse shell",
@@ -114,16 +124,41 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
         return {"repo": repo_full, "veredicto": "DESCARTAR", "motivo": rechazo,
                 "score_icp": 0, "senales": []}
 
+    estrellas = meta.get("stargazers_count", 0) or 0
+    if estrellas > ESTRELLAS_MAX_VENDIBLE:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "estrellas": estrellas,
+                "motivo": f"proyecto de comunidad famoso ({estrellas:,} estrellas): "
+                          f"no hay empresa que compre"}
+
     owner = meta.get("owner") or {}
     es_org = owner.get("type") == "Organization"
     login = owner.get("login", "")
 
     org_meta = {}
     if es_org:
-        org_meta, _ = _get(f"/orgs/{login}") or {}
+        org_meta, _ = _get(f"/orgs/{login}")
+
+    # Rechazo duro por portafolio: 60+ repos publicos es una empresa que ya
+    # tiene estructura de seguridad, o un proyecto de comunidad. Fuera.
+    n_repos = org_meta.get("public_repos", owner.get("public_repos", 0)) or 0
+    if n_repos > REPOS_MAX_VENDIBLE:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "estrellas": estrellas, "owner": login,
+                "repos_publicos": n_repos,
+                "motivo": f"demasiado grande ({n_repos} repos publicos): "
+                          f"probable equipo de seguridad propio"}
 
     contrib, _ = _get(f"/repos/{repo_full}/contributors?per_page=100&anon=false")
     n_contrib = len(contrib) if isinstance(contrib, list) else 0
+
+    # Rechazo duro por tamano de equipo. Igual que arriba: por regla.
+    if n_contrib > CONTRIB_MAX_VENDIBLE:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "estrellas": estrellas, "owner": login,
+                "contribuyentes": n_contrib, "repos_publicos": n_repos,
+                "motivo": f"demasiado grande ({n_contrib}+ contribuyentes): "
+                          f"probable equipo de seguridad propio"}
 
     readme = ""
     for cand in ("README.md", "readme.md", "README.rst", "README", "readme"):
@@ -153,16 +188,12 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
     if n_contrib >= 8:
         add("equipo_8_plus", "equipo grande")
 
-    n_repos = org_meta.get("public_repos", meta.get("owner", {}).get("public_repos", 0)) or 0
     if n_repos >= 5:
         add("portafolio_5_plus", f"{n_repos} repos publicos (portafolio)")
 
-    # Tamanio: el punto dulce es la empresa mediana. La grande ya tiene CISO,
-    # la de una persona no tiene tarjeta.
-    if n_contrib > CONTRIB_MAX_VENDIBLE or n_repos > REPOS_MAX_VENDIBLE:
-        add("demasiado_grande",
-            f"demasiado grande ({n_contrib} contrib./{n_repos} repos): probable equipo de seguridad propio")
-    elif CONTRIB_MIN_IDEAL <= n_contrib <= CONTRIB_MAX_IDEAL and REPOS_MIN_IDEAL <= n_repos <= REPOS_MAX_IDEAL:
+    # Punto dulce: la empresa mediana. La grande ya tiene CISO (y ya salio por
+    # regla mas arriba), la de una persona no tiene tarjeta.
+    if CONTRIB_MIN_IDEAL <= n_contrib <= CONTRIB_MAX_IDEAL and REPOS_MIN_IDEAL <= n_repos <= REPOS_MAX_IDEAL:
         add("tamano_ideal",
             f"tamano ideal ({n_contrib} contribuyentes, {n_repos} repos): sin CISO, con clientes")
 
@@ -209,7 +240,7 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
         "email": email,
         "contribuyentes": n_contrib,
         "repos_publicos": n_repos,
-        "estrellas": meta.get("stargazers_count", 0),
+        "estrellas": estrellas,
         "descripcion": descripcion[:200],
         "senales": senales,
         "score_icp": max(0, score),
