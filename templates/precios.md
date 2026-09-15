@@ -23,8 +23,21 @@ moneda debil compra tiempo, no seguridad.
 | Entregable | Informe de exposicion, plan priorizado impacto/esfuerzo, mapeo a controles SOC 2, estimado de remediación |
 | Para que sirve realmente | Es la cerradura de la puerta. Nadie te compra US$ 3.000 de entrada; todos te compran US$ 490. |
 
-**Fase de lanzamiento (primeros 5 clientes): US$ 290 a cambio de testimonio publico
-y referencia.** Despues, US$ 490. A partir del cliente 15, US$ 750.
+### La escalera real de entrada
+
+| Etapa | Precio | A quién |
+|---|---|---|
+| 1 · Primeros 3 | **US$ 150** | Solo contactos templados, y SOLO a cambio de testimonio publicable + permiso de nombrar |
+| 2 · Clientes 4–15 | **US$ 290** | Precio público de lanzamiento |
+| 3 · Clientes 16+ | **US$ 490** | Precio normal |
+| 4 · Consagración | **US$ 750** | Cuando ya no tengas huecos en la agenda |
+
+**El US$ 150 no se publica jamás.** No aparece en la landing ni en la lista de
+precios: se ofrece de forma privada y con condiciones. Si lo publicas, los
+clientes 4 a 15 te lo van a reclamar, y con razón.
+
+Lo que sí dices públicamente es: *"precio de lanzamiento, plazas limitadas"*.
+Eso justifica el número sin anclarte a la baja.
 
 ## Etapa 2 — Remediacion · US$ 1.200 – 6.500 por proyecto
 

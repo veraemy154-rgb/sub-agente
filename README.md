@@ -90,6 +90,7 @@ trabajo de remediación. Ver `docs/legal-y-etica.md` antes de escribirle a nadie
 - `templates/precios.md` — escalera de precios y manejo de objeciones.
 - `templates/sow-autorizacion.md` — firmar antes de tocar cualquier sistema.
 - `templates/secuencia-outreach.md` — como prospectar.
+- `templates/testimonios.md` — como conseguir testimonios reales sin regalar el trabajo.
 
 ## Automatizacion mensual (lo que hace que el retainer no dependa de ti)
 

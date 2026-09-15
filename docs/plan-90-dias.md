@@ -37,9 +37,11 @@ No tienes portfolio, asi que tu primer producto son **3 casos de estudio**, no d
 | 3 | Preparar identidad minima: dominio, firma de mail, LinkedIn con titulo claro ("Ayudo a SaaS a pasar SOC 2 / cuestionarios de seguridad"). |
 | 4 | Enviar los primeros 12 toques. Volumen bajo, mensaje manual y personalizado. |
 | 5–10 | Seguir la secuencia. Responder en menos de 2 h. Registrar todo en un CSV simple: repo, contacto, dia, estado. |
-| 8–14 | Cerrar **3 diagnosticos a US$ 290** a cambio de testimonio + permiso de nombrarlos. Entregar en 48 h, impecables. |
+| 8–14 | Cerrar **3 diagnosticos a US$ 150** (tarifa privada, no publicada) a cambio de testimonio + permiso de nombrarlos. Entregar en 48 h, impecables. |
 
-**Meta de la quincena: US$ 870 y 3 testimonios.** Poco dinero, activo enorme.
+**Meta de la quincena: US$ 450 y 3 testimonios.** Poco dinero, activo enorme.
+El testimonio se pide EN la llamada de entrega, y se manda el borrador escrito por ti
+para que el cliente solo lo corrija. Ver `templates/testimonios.md`.
 Los testimonios son lo que te permite cobrar US$ 490 y despues US$ 750.
 
 > Nota del director: si al dia 14 no tienes 3 testimonios, el problema no es el
@@ -54,7 +56,7 @@ Los testimonios son lo que te permite cobrar US$ 490 y despues US$ 750.
 |---|---|
 | Mensajes enviados por semana | 40–60 |
 | Diagnosticos vendidos | 6–8 |
-| Precio | US$ 490 |
+| Precio | US$ 290 (lanzamiento) |
 | Conversion diagnostico → remediación | 1 de cada 3 |
 | **Facturacion del mes** | **US$ 2.500 – 4.000** |
 
