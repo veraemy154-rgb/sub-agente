@@ -12,6 +12,9 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import io
+import os
+import subprocess
 import sys
 
 from app.scanner import auditar
@@ -184,6 +187,136 @@ def cmd_pipeline(a):
     return 0
 
 
+def _git(*args: str) -> str:
+    try:
+        out = subprocess.run(["git", *args], capture_output=True, text=True, timeout=15)
+        return out.stdout.strip() if out.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
+def cmd_doctor(a):
+    """Diagnostico del entorno. Responde 'por que me salen resultados raros'."""
+    ok = lambda b: "OK  " if b else "FALLA"
+    problemas = 0
+
+    print("=== ENTORNO ===")
+    py = sys.version.split()[0]
+    mayor, menor = (int(x) for x in py.split(".")[:2])
+    print(f"  {ok((mayor, menor) >= (3, 9))} Python {py}  (minimo 3.9)")
+
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        print(f"  {ok(True)} GITHUB_TOKEN configurado ({token[:7]}...)")
+    else:
+        print(f"  {ok(False)} GITHUB_TOKEN NO configurado -> 60 peticiones/hora")
+        print("       export GITHUB_TOKEN=ghp_... (github.com/settings/tokens)")
+        problemas += 1
+
+    print("\n=== REPOSITORIO ===")
+    ruta = _git("rev-parse", "--show-toplevel")
+    if not ruta:
+        print("  FALLA Este directorio NO es un repositorio git.")
+        print("        No se puede sincronizar. Solucion:")
+        print("        git clone https://github.com/veraemy154-rgb/sub-agente.git")
+        print("        cd sub-agente && git checkout arena/01a0a513-sub-agente")
+        problemas += 3
+    else:
+        print(f"  OK   Repositorio en {ruta}")
+
+    rama = _git("rev-parse", "--abbrev-ref", "HEAD") or "(desconocida)"
+    rama_ok = rama == "arena/01a0a513-sub-agente"
+    print(f"  {ok(rama_ok)} Rama: {rama}")
+    if not rama_ok:
+        print("        git checkout arena/01a0a513-sub-agente")
+        problemas += 1
+
+    head = _git("log", "-1", "--oneline")
+    print(f"  {'OK  ' if head else '?   '} Ultimo commit: {head or 'ninguno'}")
+
+    sucios = [l for l in _git("status", "--porcelain").splitlines() if l.strip()] if ruta else []
+    if sucios:
+        print(f"  FALLA {len(sucios)} archivo(s) MODIFICADOS localmente:")
+        for l in sucios[:8]:
+            print(f"        {l}")
+        print("        Si no los cambiaste TU, alguien los reescribio. Arreglo:")
+        print("        git fetch origin && git reset --hard origin/arena/01a0a513-sub-agente")
+        problemas += 2
+    else:
+        print("  OK   Sin modificaciones locales")
+
+    remoto = _git("rev-parse", "--abbrev-ref", "@{upstream}")
+    if remoto:
+        atras = _git("rev-list", "--count", f"HEAD..{remoto}")
+        n = int(atras or 0)
+        print(f"  {ok(n == 0)} Actualizado con {remoto}"
+              + ("" if n == 0 else f" -> {n} commit(s) ATRAS"))
+        if n:
+            print("        git pull --ff-only")
+            problemas += 1
+
+    print("\n=== INTEGRIDAD DEL CODIGO ===")
+    # Senales que NO existen en esta rama: si aparecen, los filtros fueron
+    # reescritos por otra version y los resultados no son confiables.
+    fantasmas = ["issues abiertos", "sin triage", "Cuenta con politica de seguridad"]
+    base = os.path.dirname(os.path.abspath(__file__))
+    hallados = []
+    for raiz, _, archivos in os.walk(os.path.join(base, "app")):
+        for f in archivos:
+            if not f.endswith(".py"):
+                continue
+            try:
+                t = io.open(os.path.join(raiz, f), encoding="utf-8").read()
+            except Exception:
+                continue
+            for fan in fantasmas:
+                if fan in t:
+                    hallados.append((f, fan))
+    limpio = not hallados
+    print(f"  {ok(limpio)} Filtros sin versiones ajenas mezcladas")
+    if not limpio:
+        for f, fan in hallados[:6]:
+            print(f"        {f} contiene '{fan}' <- NO es de esta rama")
+        problemas += 2
+
+    esperados = ["scanner.py", "icp.py", "leadgen.py", "pipeline.py",
+                 "analisis.py", "fuentes.py", "evidence.py", "facturacion.py"]
+    faltan = [e for e in esperados
+              if not os.path.exists(os.path.join(base, "app", e))]
+    print(f"  {ok(not faltan)} Modulos completos"
+          + ("" if not faltan else f" -> faltan: {', '.join(faltan)}"))
+    if faltan:
+        problemas += 1
+
+    print("\n=== SALIDA ===")
+    try:
+        os.makedirs("out", exist_ok=True)
+        with open(os.path.join("out", ".doctor"), "w") as f:
+            f.write("ok")
+        os.remove(os.path.join("out", ".doctor"))
+        print("  OK   Se puede escribir en out/")
+    except Exception as e:
+        print(f"  FALLA No se puede escribir en out/: {e}")
+        problemas += 1
+
+    print()
+    if problemas:
+        print(f"RESULTADO: {problemas} problema(s) encontrado(s).")
+        if not ruta:
+            print("Esta copia no es un clon de git: no se puede actualizar.")
+            print("Arranca de cero (es lo mas rapido y lo mas seguro):")
+            print("  cd ~ && git clone https://github.com/veraemy154-rgb/sub-agente.git")
+            print("  cd sub-agente && git checkout arena/01a0a513-sub-agente")
+            print("  python run.py doctor")
+        else:
+            print("Arreglo:")
+            print("  git fetch origin && git reset --hard origin/arena/01a0a513-sub-agente")
+            print("  (si tienes cambios tuyos, guardalos antes con: git stash)")
+        return 1
+    print("RESULTADO: todo correcto. Ya puedes correr: python run.py leads --top 8")
+    return 0
+
+
 def cmd_fuentes(a):
     nivel = a.nivel or None
     if a.md:
@@ -256,6 +389,8 @@ def main():
     n.add_argument("--no-osv", action="store_true")
     n.add_argument("--out", default="")
     n.set_defaults(fn=cmd_analisis)
+
+    sub.add_parser("doctor", help="diagnostica el entorno y la copia del repo").set_defaults(fn=cmd_doctor)
 
     pl = sub.add_parser("pipeline", help="tablero comercial: prospecto -> retainer")
     pl.add_argument("--estado", default="", choices=pipe.ESTADOS)
