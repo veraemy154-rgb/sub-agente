@@ -82,6 +82,55 @@ RECHAZO_NOMBRE = [
     r"build[-_]your[-_]own", r"^resources$", r"^tools$", r"handbook",
     r"^ossu", r"^study", r"^edu", r"^bootcamp", r"^projects$", r"^project[-_]based",
 ]
+# Multinacionales y plataformas: aunque el repo satelite sea pequeno (pocos
+# contribuyentes, pocos repos), detras hay un equipo de seguridad corporativo.
+# nvidia-isaac/leapp parecia un prospecto perfecto y es NVIDIA.
+GRANDES = [
+    "nvidia", "google", "microsoft", "amazon", "aws", "meta", "facebook", "apple",
+    "ibm", "oracle", "intel", "amd", "cisco", "sap", "siemens", "redhat",
+    "canonical", "apache", "kubernetes", "tensorflow", "pytorch", "huggingface",
+    "openai", "anthropic", "deepmind", "adobe", "salesforce", "shopify", "spotify",
+    "netflix", "uber", "lyft", "airbnb", "stripe", "databricks", "snowflake",
+    "mongodb", "elastic", "hashicorp", "docker", "gitlab", "github", "atlassian",
+    "vmware", "broadcom", "qualcomm", "samsung", "huawei", "alibaba", "tencent",
+    "baidu", "bytedance", "lenovo", "dell", "datadog", "splunk", "cloudflare",
+    "twilio", "crowdstrike", "paloalto", "okta", "vercel", "supabase", "posthog",
+]
+
+# Academia: mucho codigo publico, cero presupuesto de seguridad.
+# AnubisLMS puntuo 93 y es un LMS de la NYU.
+ACADEMICO_TEXTO = [
+    "course", "courses", "coursework", "students", "autograder", "classroom",
+    "lecture", "syllabus", "assignment", "homework", "grader", "bootcamp",
+    "lms", "universidad", "university", "computing science", "cs course",
+]
+ACADEMICO_DOMINIO = [".edu", ".edu.", ".ac.", ".ac.", ".gouv", ".gov"]
+UNIVERSIDADES = [r"\bnyu\b", r"\bmit\b", r"\bstanford\b", r"\bberkeley\b",
+                 r"\bcmu\b", r"\bcaltech\b", r"\bharvard\b", r"\btandon\b",
+                 r"\bpolytechnic\b", r"\bpolitecnico\b", r"\buniversidad\b",
+                 r"\buniversity\b", r"\binstitute of technology\b"]
+
+
+def es_institucion(login: str, sitio: str, *textos: str) -> str | None:
+    """Devuelve el motivo si es multinacional o academico, o None si pasa."""
+    bajo = (login or "").lower()
+    for g in GRANDES:
+        if g in bajo or g in (sitio or "").lower():
+            return f"es una multinacional/plataforma grande ('{g}'): ya tiene equipo de seguridad"
+    dom = (sitio or "").lower()
+    for d in ACADEMICO_DOMINIO:
+        if d in dom:
+            return f"dominio academico/gubernamental ({sitio}): no compra"
+    junto = " ".join([dom] + [t.lower() for t in textos if t])
+    for k in ACADEMICO_TEXTO:
+        if k in junto:
+            return f"proyecto academico/educativo ('{k}'): no hay presupuesto"
+    for u in UNIVERSIDADES:
+        if re.search(u, junto):
+            return f"proyecto universitario ({u}): no hay presupuesto"
+    return None
+
+
 RECHAZO_TEXTO = [
     "ctf", "capture the flag", "malware", "exploit", "payload", "reverse shell",
     "vpn", "v2ray", "shadowsocks", "clash", "free proxies", "sock5", "sock 5",
@@ -149,6 +198,15 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
                 "motivo": f"demasiado grande ({n_repos} repos publicos): "
                           f"probable equipo de seguridad propio"}
 
+    sitio = org_meta.get("blog") or meta.get("homepage") or ""
+    inst = es_institucion(login, sitio, descripcion,
+                          org_meta.get("description") or "")
+    if inst:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "estrellas": estrellas, "owner": login,
+                "sitio": sitio, "repos_publicos": n_repos,
+                "motivo": inst}
+
     contrib, _ = _get(f"/repos/{repo_full}/contributors?per_page=100&anon=false")
     n_contrib = len(contrib) if isinstance(contrib, list) else 0
 
@@ -167,6 +225,14 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
             break
     readme = readme[:20000]
 
+    inst2 = es_institucion(login, sitio, readme[:4000])
+    if inst2:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "estrellas": estrellas, "owner": login,
+                "sitio": sitio, "contribuyentes": n_contrib,
+                "repos_publicos": n_repos,
+                "motivo": inst2 + " (detectado en el README)"}
+
     senales, score = [], 0
 
     def add(clave, etiqueta):
@@ -176,7 +242,6 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
 
     if es_org:
         add("es_organizacion", "es una organizacion (hay estructura)")
-    sitio = org_meta.get("blog") or meta.get("homepage") or ""
     if sitio:
         add("sitio_web", f"tiene sitio propio ({sitio[:40]})")
     email = org_meta.get("email") or ""
