@@ -17,6 +17,7 @@ python run.py leads --lang python,go --top 12
 python run.py outreach owner/repo --remitente "Tu Nombre"
 python run.py evidencia --demo             # informe mensual de evidencia (retainer)
 python run.py fuentes                       # donde encontrar prospectos (enlaces listos)
+python run.py analisis owner/repo            # borrador de analisis publico para publicar
 ```
 
 Con Docker (VPS):
@@ -54,6 +55,8 @@ app/
   evidence.py  informe mensual de evidencia para el retainer
   snapshots.py estado historico de hallazgos: detecta que se cerro y que aparecio
   facturacion.py facturas y estado de cuenta del retainer
+  analisis.py   redacta el analisis publico (credibilidad sin clientes)
+  fuentes.py    16 busquedas listas para encontrar prospectos
   main.py      API FastAPI
 templates/     SOW/autorizacion, precios, secuencia, informe mensual de evidencia
 docs/          plan-90-dias.md · legal-y-etica.md
@@ -94,6 +97,7 @@ trabajo de remediación. Ver `docs/legal-y-etica.md` antes de escribirle a nadie
 - `templates/testimonios.md` — como conseguir testimonios reales sin regalar el trabajo.
 - `templates/mensaje-lanzamiento.md` — mensajes de la oferta de lanzamiento a contactos templados.
 - `docs/fuentes-de-prospectos.md` — los 4 niveles de fuentes y la rutina semanal.
+- `templates/analisis-publico.md` — el analisis publico: que nunca publicar y como distribuirlo.
 
 ## Automatizacion mensual (lo que hace que el retainer no dependa de ti)
 

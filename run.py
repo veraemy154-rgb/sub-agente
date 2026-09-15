@@ -12,6 +12,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import sys
 
 from app.scanner import auditar
 from app.report import a_markdown, estimar_precio
@@ -21,6 +22,7 @@ from app.icp import perfil
 from app.leadgen import puntuar_lead
 from app.evidence import generar, ejemplo, mes_actual
 from app.fuentes import filtrar, a_markdown, NIVELES
+from app.analisis import redactar, post_linkedin
 
 
 def cmd_scan(a):
@@ -95,6 +97,33 @@ def cmd_evidencia(a):
     return 0
 
 
+CTA_DEFAULT = ("Hago este mismo analisis por encargo para equipos que se preparan "
+               "para SOC 2 o les llega el cuestionario de seguridad de un cliente "
+               "grande. Si es tu caso, escribeme y te mando el de tu repo.")
+
+
+def cmd_analisis(a):
+    rep = auditar(a.repo, con_osv=not a.no_osv)
+    if rep.get("error"):
+        print(f"Error: {rep['error']}")
+        return 1
+    cta = a.cta or ("" if a.sin_cta else CTA_DEFAULT)
+    if a.linkedin:
+        out = post_linkedin(rep, autor=a.autor, anonimo=a.anonimo, cta=cta)
+    else:
+        out = redactar(rep, autor=a.autor, anonimo=a.anonimo, cta=cta)
+    if a.out:
+        with open(a.out, "w", encoding="utf-8") as f:
+            f.write(out)
+        print(f"Escrito en {a.out}")
+    else:
+        print(out)
+    if not a.anonimo:
+        print("\n[recordatorio] Avisa al proyecto antes de publicar. "
+              "Ver templates/analisis-publico.md", file=sys.stderr)
+    return 0
+
+
 def cmd_fuentes(a):
     nivel = a.nivel or None
     if a.md:
@@ -156,6 +185,17 @@ def main():
     f.add_argument("--nivel", type=int, default=0, choices=[0, 1, 2, 3, 4])
     f.add_argument("--md", action="store_true")
     f.set_defaults(fn=cmd_fuentes)
+
+    n = sub.add_parser("analisis", help="borrador de analisis publico para publicar")
+    n.add_argument("repo")
+    n.add_argument("--anonimo", action="store_true", help="no nombrar el proyecto")
+    n.add_argument("--linkedin", action="store_true", help="post nativo en vez de articulo")
+    n.add_argument("--autor", default="")
+    n.add_argument("--cta", default="")
+    n.add_argument("--sin-cta", action="store_true")
+    n.add_argument("--no-osv", action="store_true")
+    n.add_argument("--out", default="")
+    n.set_defaults(fn=cmd_analisis)
 
     a = p.parse_args()
     raise SystemExit(a.fn(a))
