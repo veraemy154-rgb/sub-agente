@@ -23,6 +23,15 @@
   .btn{display:inline-block;background:var(--acc);color:#06120a;font-weight:700;padding:13px 26px;border-radius:8px;border:0;font-size:16px;cursor:pointer;letter-spacing:-.01em}
   .btn:hover{filter:brightness(1.08)}
   .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  .btn.pp{background:#ffc439;color:#003087}
+  .btn.pp:hover{filter:brightness(1.05)}
+  .payrow{display:flex;align-items:center;justify-content:space-between;gap:18px;
+    background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:14px}
+  .payrow .what{font-weight:700}
+  .payrow .what small{display:block;font-weight:400;color:var(--dim);font-size:13.5px;margin-top:3px}
+  .payrow .amt{font-size:22px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}
+  @media(max-width:640px){.payrow{flex-direction:column;align-items:flex-start}
+    .btn.pp{width:100%;text-align:center}}
   section{padding:88px 0;border-bottom:1px solid var(--line)}
   h1{font-size:clamp(32px,5.2vw,56px);line-height:1.08;letter-spacing:-.035em;font-weight:800}
   h2{font-size:clamp(26px,3.4vw,38px);line-height:1.15;letter-spacing:-.03em;font-weight:800;margin-bottom:14px}
@@ -90,7 +99,8 @@
       <a href="#problema">El problema</a>
       <a href="#entrega">Qué entregas</a>
       <a href="#precio">Precio</a>
-      <a class="btn" style="padding:9px 18px;font-size:14px;margin-left:26px" href="#contacto">Pedir diagnóstico</a>
+      <a href="#pago">Pagar</a>
+      <a class="btn" style="padding:9px 18px;font-size:14px;margin-left:26px" href="#pago">Pagar diagnóstico</a>
     </nav>
   </div>
 </header>
@@ -243,7 +253,7 @@
           <li>Plan priorizado + mapeo SOC 2</li>
           <li>Llamada de 30 min de devolución</li>
         </ul>
-        <a class="btn ghost" style="display:block;text-align:center;margin-top:22px" href="#contacto">Empezar</a>
+        <a class="btn" style="display:block;text-align:center;margin-top:22px" href="#pago">Pagar y empezar</a>
       </div>
       <div class="card hl">
         <h3>Remediación</h3>
@@ -273,6 +283,44 @@
     <p class="fineprint" style="max-width:720px;margin-top:26px">
       Si el diagnóstico no encuentra nada relevante, te lo digo y te devuelvo el dinero.
       prefiero un cliente que vuelve que una factura que discutir.
+    </p>
+  </div>
+</section>
+
+<section id="pago">
+  <div class="wrap" style="max-width:820px">
+    <span class="tag">Pago</span>
+    <h2>Paga y empiezo mañana.</h2>
+    <p class="lead">
+      Sin llamadas previas ni propuestas de diez páginas. Pagas, me pasas el repositorio
+      y en 48 horas tienes el informe.
+    </p>
+
+    <div style="margin-top:34px">
+      <div class="payrow">
+        <div class="what">Diagnóstico Express
+          <small>Hasta 3 repos · informe en 48 h · precio de lanzamiento</small></div>
+        <div class="amt">US$ 290</div>
+        <button class="btn pp" data-pago="diagnostico">Pagar con PayPal</button>
+      </div>
+      <div class="payrow">
+        <div class="what">Retainer Gestión Continua
+          <small>Primer mes · escaneo en CI + informe mensual de evidencia</small></div>
+        <div class="amt">US$ 1.200</div>
+        <button class="btn pp" data-pago="retainer">Pagar con PayPal</button>
+      </div>
+      <div class="payrow">
+        <div class="what">Remediación — anticipo 50 %
+          <small>Se descuenta del total acordado tras el diagnóstico</small></div>
+        <div class="amt">US$ 900</div>
+        <button class="btn pp" data-pago="remediacion">Pagar con PayPal</button>
+      </div>
+    </div>
+
+    <p class="fineprint" style="margin-top:18px">
+      Los importes ya incluyen el recargo de PayPal. La comisión de la pasarela corre
+      por cuenta del cliente. Prefieres Zelle, USDT o transferencia: dímelo y te paso
+      los datos, sin recargo.
     </p>
   </div>
 </section>
@@ -311,7 +359,7 @@
       48 horas, precio fijo, sin compromiso. Lo peor que puede pasar es que te diga
       que estás en buen estado.
     </p>
-    <a class="btn" style="margin-top:28px;padding:16px 34px;font-size:17px" href="#contacto">Verificar mi exposición · US$ 290</a>
+    <a class="btn" style="margin-top:28px;padding:16px 34px;font-size:17px" href="#pago">Pagar y verificar mi exposición · US$ 290</a>
     <p class="fineprint" style="margin-top:18px">Respondo personalmente en menos de 24 horas hábiles.</p>
   </div>
 </section>
@@ -327,6 +375,47 @@
 </footer>
 
 <script>
+  // ===== CONFIGURACION DE PAGO =====
+  // Cambia el correo si usas otra cuenta. Si creas un enlace PayPal.Me,
+  // pon aqui el usuario (ej: "escudoapp") y los botones usaran paypal.me.
+  var PAYPAL_EMAIL = "ev227166@gmail.com";
+  var PAYPAL_ME    = "";
+  var RECARGO_PCT  = 5.5;   // comision internacional de PayPal, a cargo del cliente
+
+  var PRECIOS = {
+    diagnostico:  { base: 290,  concepto: "Diagnostico Express de exposicion" },
+    retainer:     { base: 1200, concepto: "Retainer Gestion de Vulnerabilidades - mes 1" },
+    remediacion:  { base: 900,  concepto: "Anticipo 50% Remediacion" }
+  };
+
+  function linkPago(clave) {
+    var p = PRECIOS[clave];
+    if (!p) return "#";
+    var monto = (p.base * (1 + RECARGO_PCT / 100)).toFixed(2);
+    if (PAYPAL_ME) return "https://paypal.me/" + PAYPAL_ME + "/" + monto + "USD";
+    return "https://www.paypal.com/cgi-bin/webscr" +
+           "?cmd=_xclick&business=" + encodeURIComponent(PAYPAL_EMAIL) +
+           "&item_name=" + encodeURIComponent(p.concepto) +
+           "&amount=" + monto + "&currency_code=USD&no_shipping=1";
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pago]'), function (b) {
+    b.addEventListener('click', function () {
+      var clave = b.getAttribute('data-pago');
+      var p = PRECIOS[clave];
+      var monto = (p.base * (1 + RECARGO_PCT / 100)).toFixed(2);
+      // Registra la intencion de pago antes de salir a PayPal.
+      if (typeof ENDPOINT !== 'undefined' && ENDPOINT) {
+        try {
+          navigator.sendBeacon(ENDPOINT + "/intencion",
+            new Blob([JSON.stringify({ concepto: clave, monto: monto })],
+                     { type: "application/json" }));
+        } catch (e) {}
+      }
+      window.open(linkPago(clave), "_blank");
+    });
+  });
+
   // Apunta a tu API. Si no hay backend, cae a mailto.
   var ENDPOINT = "";  // ej: "https://tu-vps.e2b.app/contacto"
   document.getElementById('f').addEventListener('submit', async function (e) {

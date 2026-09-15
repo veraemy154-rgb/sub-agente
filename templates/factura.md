@@ -50,6 +50,40 @@ reales en `app/facturacion.py` (`RIELES_DEFAULT`) o pásalos por parámetro.
 | **Payoneer** | 1–2 días | Alternativa a Wise |
 | **Transferencia USD** | 2–5 días | Clientes corporativos grandes; suelen exigirla |
 
+### PayPal: cómo usarlo bien (y su trampa)
+
+Es el medio que más confianza genera en un cliente nuevo: no tiene que darte sus
+datos bancarios, paga en dos clics y tiene protección al comprador. **Pero tiene
+una trampa operativa si operas desde Venezuela.**
+
+| Lo bueno | Lo malo |
+|---|---|
+| El cliente paga sin fricción | Comisión internacional alta (~4,99 % + fijo) |
+| Acreditación inmediata | **No permite retiro a bancos venezolanos** |
+| Protección al vendedor si entregas con respaldo | Puede retener fondos 21 días en cuentas nuevas |
+| Se integra como botón en la landing | Cierres y limitaciones automáticas por movimientos atípicos |
+
+**Lo que hay que hacer:**
+
+1. **Abre una cuenta en USD donde PayPal sí pueda retirar** (banco en EE. UU. o
+   Puerto Rico; varios se abren con pasaporte y RIF). Sin esto, el dinero entra
+   pero no sale.
+2. **Retira con frecuencia.** No dejes saldo acumulado en PayPal: una limitación
+   de cuenta puede dejar fondos congelados por meses.
+3. **Ten siempre un segundo medio listo.** Si PayPal limita la cuenta, la
+   factura siguiente sale por Zelle o USDT. Que el cliente ya sepa que existen.
+4. **No muevas volumen atípico de golpe.** Los bloqueos se disparan por
+   movimientos que no encajan con el historial de la cuenta.
+5. **Usa datos reales y consistentes** (nombre, dirección, tarjeta a tu nombre).
+   La mayoría de las limitaciones permanentes vienen de perfiles inconsistentes.
+
+**La comisión la paga el cliente.** La landing ya la suma al importe
+(`RECARGO_PCT = 5.5`) y `app/facturacion.py` tiene `con_recargo()` para lo mismo.
+Si no la sumas, tu margen se lo come la pasarela: en un diagnóstico de US$ 290
+son US$ 16 menos en cada venta.
+
+### Regla general de medios de pago
+
 **Regla:** ofrece dos medios como máximo. Cuantas más opciones pones, más tiempo
 tarda el cliente en decidir.
 

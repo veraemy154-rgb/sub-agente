@@ -12,16 +12,49 @@ from datetime import date, datetime, timedelta, timezone
 
 FACT_DIR = "out/facturas"
 
-# Rieles de cobro. Edita con tus datos reales antes de facturar.
-# Ordenados por preferencia para cobrar desde Venezuela: rapido, sin
-# retenciones raras y en dolares.
+PAYPAL_EMAIL = os.environ.get("PAYPAL_EMAIL", "ev227166@gmail.com")
+PAYPAL_ME = os.environ.get("PAYPAL_ME", "")          # ej: "tuempresa" -> paypal.me/tuempresa/490USD
+COMISION_PAYPAL_PCT = 5.5   # transaccion internacional: ~4.99% + fijo. Redondea hacia arriba.
+
+# Rieles de cobro. Ordenados por preferencia: rapido, sin retenciones raras y en dolares.
 RIELES_DEFAULT = [
+    ("PayPal", f"{PAYPAL_EMAIL}", "inmediato · comision a cargo del cliente"),
     ("Zelle", "________________", "mismo dia, sin comision"),
     ("USDT (TRC20)", "________________", "mismo dia, red barata"),
     ("Wise", "________________", "1-2 dias"),
     ("Payoneer", "________________", "1-2 dias"),
     ("Transferencia bancaria USD", "datos a solicitud", "2-5 dias"),
 ]
+
+
+def link_paypal(monto_usd: float, concepto: str = "",
+                aplicar_recargo: bool = True) -> str:
+    """Enlace de pago directo. Con PayPal.Me si esta configurado, si no el
+    enlace clasico de PayPal al correo.
+
+    Por defecto suma el recargo de la comision: si no lo haces, la comision
+    internacional de PayPal (~5%) sale de tu margen en cada cobro.
+    """
+    monto = con_recargo(monto_usd) if aplicar_recargo else monto_usd
+    m = f"{monto:.2f}"
+    if PAYPAL_ME:
+        return f"https://paypal.me/{PAYPAL_ME}/{m}USD"
+    import urllib.parse
+    q = urllib.parse.urlencode({
+        "cmd": "_xclick", "business": PAYPAL_EMAIL,
+        "item_name": concepto or "Servicio de seguridad",
+        "amount": m, "currency_code": "USD", "no_shipping": "1",
+    })
+    return f"https://www.paypal.com/cgi-bin/webscr?{q}"
+
+
+def con_recargo(monto: float, pct: float = COMISION_PAYPAL_PCT) -> float:
+    """Monto a cobrar por PayPal para que te llegue `monto` limpio.
+
+    PayPal cobra ~4.99% + fijo en transacciones internacionales y se lo descuenta
+    al que cobra. Si no lo sumas al precio, tu margen se lo come la comision.
+    """
+    return round(monto * (1 + pct / 100.0), 2)
 
 PLANES = {
     "base": {"fee": 1200, "horas": 0, "sla": "sin SLA", "alcance": "Escaneo en CI + informe mensual de evidencia + triage"},
