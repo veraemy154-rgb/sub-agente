@@ -16,6 +16,7 @@ python run.py scan owner/repo --md         # informe entregable al cliente
 python run.py leads --lang python,go --top 12
 python run.py outreach owner/repo --remitente "Tu Nombre"
 python run.py evidencia --demo             # informe mensual de evidencia (retainer)
+python run.py fuentes                       # donde encontrar prospectos (enlaces listos)
 ```
 
 Con Docker (VPS):
@@ -91,6 +92,8 @@ trabajo de remediación. Ver `docs/legal-y-etica.md` antes de escribirle a nadie
 - `templates/sow-autorizacion.md` — firmar antes de tocar cualquier sistema.
 - `templates/secuencia-outreach.md` — como prospectar.
 - `templates/testimonios.md` — como conseguir testimonios reales sin regalar el trabajo.
+- `templates/mensaje-lanzamiento.md` — mensajes de la oferta de lanzamiento a contactos templados.
+- `docs/fuentes-de-prospectos.md` — los 4 niveles de fuentes y la rutina semanal.
 
 ## Automatizacion mensual (lo que hace que el retainer no dependa de ti)
 

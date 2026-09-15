@@ -20,6 +20,7 @@ from app.outreach import secuencia
 from app.icp import perfil
 from app.leadgen import puntuar_lead
 from app.evidence import generar, ejemplo, mes_actual
+from app.fuentes import filtrar, a_markdown, NIVELES
 
 
 def cmd_scan(a):
@@ -94,6 +95,26 @@ def cmd_evidencia(a):
     return 0
 
 
+def cmd_fuentes(a):
+    nivel = a.nivel or None
+    if a.md:
+        print(a_markdown(nivel))
+        return 0
+    for n in sorted(NIVELES):
+        fs = [f for f in filtrar() if f[1] == n and (not nivel or n == nivel)]
+        if not fs:
+            continue
+        print(f"\n{'='*72}\n{NIVELES[n]}\n{'='*72}")
+        for fid, _, nombre, que, url, nota in fs:
+            print(f"\n[{fid}] {nombre}")
+            print(f"     que: {que}")
+            print(f"     url: {url}")
+            print(f"     uso: {nota}")
+    print("\n" + "=" * 72)
+    print("Guarda la lista para ir tachando: python run.py fuentes --md > out/fuentes.md")
+    return 0
+
+
 def main():
     p = argparse.ArgumentParser(prog="sub-agente")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -130,6 +151,11 @@ def main():
     e.add_argument("--demo", action="store_true")
     e.add_argument("--out", default="")
     e.set_defaults(fn=cmd_evidencia)
+
+    f = sub.add_parser("fuentes", help="donde encontrar prospectos (enlaces listos)")
+    f.add_argument("--nivel", type=int, default=0, choices=[0, 1, 2, 3, 4])
+    f.add_argument("--md", action="store_true")
+    f.set_defaults(fn=cmd_fuentes)
 
     a = p.parse_args()
     raise SystemExit(a.fn(a))
