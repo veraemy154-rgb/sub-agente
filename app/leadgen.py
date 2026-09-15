@@ -46,6 +46,14 @@ def buscar_repos(lang: str, icp: dict, token: str | None = None, por_pagina: int
            f"&sort=updated&order=desc&per_page={por_pagina}")
     data, st = _get(url, token)
     if st != 200:
+        if data.get("_auth_error"):
+            print("  ! TOKEN INVALIDO (401 Bad credentials).")
+            print("    El GITHUB_TOKEN no sirve: es un placeholder, esta mal copiado o expiro.")
+            print("    Crea uno en github.com/settings/tokens y luego:")
+            print("      export GITHUB_TOKEN=ghp_tu_token_real")
+            print("    O trabajar sin token (60 peticiones/hora, pocos prospectos):")
+            print("      unset GITHUB_TOKEN")
+            return []
         if data.get("_rate_limit"):
             print("  ! LIMITE DE TASA de GitHub alcanzado (sin token: 60 peticiones/hora).")
             print("    Crea uno en github.com/settings/tokens (sin permisos, solo public_repo)")

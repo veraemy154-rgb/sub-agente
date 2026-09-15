@@ -54,7 +54,8 @@ def _get(path: str, token: str | None = None, timeout: int = 20):
             cuerpo = {}
         msg = cuerpo.get("message") or e.reason
         out = ({"_error": e.code, "_msg": msg,
-                "_rate_limit": "rate limit" in str(msg).lower()}, e.code)
+                "_rate_limit": "rate limit" in str(msg).lower(),
+                "_auth_error": e.code == 401 or "bad credentials" in str(msg).lower()}, e.code)
     except Exception as e:  # red caida, timeout, DNS
         out = ({"_error": 0, "_msg": str(e)}, 0)
     if out[1] == 200:

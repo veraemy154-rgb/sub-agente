@@ -207,7 +207,23 @@ def cmd_doctor(a):
 
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     if token:
-        print(f"  {ok(True)} GITHUB_TOKEN configurado ({token[:7]}...)")
+        from app.scanner import _get
+        d, st = _get("/rate_limit")
+        if d.get("_auth_error"):
+            print(f"  FALLA GITHUB_TOKEN INVALIDO ({token[:11]}...): 401 Bad credentials")
+            print("        Ese valor es un placeholder o esta mal copiado.")
+            print("        Crea uno real en github.com/settings/tokens y:")
+            print("          export GITHUB_TOKEN=ghp_tu_token_real")
+            print("        (y quita la linea mala de ~/.bashrc: sed -i '/ghp_tu_token/d' ~/.bashrc)")
+            problemas += 2
+        else:
+            core = (d.get("resources") or {}).get("core") or {}
+            limite = core.get("limit", "?")
+            quedan = core.get("remaining", "?")
+            print(f"  {ok(limite == 5000)} GITHUB_TOKEN valido · limite {limite}/h · quedan {quedan}")
+            if limite != 5000:
+                print("        Un token valido da 5000/h. Si da 60, no te lo esta tomando.")
+                problemas += 1
     else:
         print(f"  {ok(False)} GITHUB_TOKEN NO configurado -> 60 peticiones/hora")
         print("       export GITHUB_TOKEN=ghp_... (github.com/settings/tokens)")
