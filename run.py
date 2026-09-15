@@ -27,6 +27,7 @@ from app.evidence import generar, ejemplo, mes_actual
 from app.fuentes import filtrar, a_markdown, NIVELES
 from app.analisis import redactar, post_linkedin
 from app import pipeline as pipe
+from app.guardian import informe as guardian_informe
 
 
 def cmd_scan(a):
@@ -333,6 +334,11 @@ def cmd_doctor(a):
     return 0
 
 
+def cmd_guardian(a):
+    print(guardian_informe(a.n))
+    return 0
+
+
 def cmd_fuentes(a):
     nivel = a.nivel or None
     if a.md:
@@ -407,6 +413,10 @@ def main():
     n.set_defaults(fn=cmd_analisis)
 
     sub.add_parser("doctor", help="diagnostica el entorno y la copia del repo").set_defaults(fn=cmd_doctor)
+
+    g = sub.add_parser("guardian", help="quien ha tocado el codigo y con que autorizacion")
+    g.add_argument("--n", type=int, default=20)
+    g.set_defaults(fn=cmd_guardian)
 
     pl = sub.add_parser("pipeline", help="tablero comercial: prospecto -> retainer")
     pl.add_argument("--estado", default="", choices=pipe.ESTADOS)
