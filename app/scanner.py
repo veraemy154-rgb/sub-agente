@@ -23,9 +23,14 @@ UA = {"User-Agent": "sub-agente-auditor/1.0 (+contacto previa autorizacion)"}
 
 # ---------------------------------------------------------------- red
 
+_CACHE: dict[str, tuple] = {}
+
 
 def _get(path: str, token: str | None = None, timeout: int = 20):
     url = path if path.startswith("http") else API + path
+    ck = f"GET {url}"
+    if ck in _CACHE:
+        return _CACHE[ck]
     headers = dict(UA)
     headers["Accept"] = "application/vnd.github+json"
     if token:
@@ -33,11 +38,14 @@ def _get(path: str, token: str | None = None, timeout: int = 20):
     req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.loads(r.read().decode("utf-8", "replace")), r.status
+            out = (json.loads(r.read().decode("utf-8", "replace")), r.status)
     except urllib.error.HTTPError as e:
-        return {"_error": e.code, "_msg": e.reason}, e.code
+        out = ({"_error": e.code, "_msg": e.reason}, e.code)
     except Exception as e:  # red caida, timeout, DNS
-        return {"_error": 0, "_msg": str(e)}, 0
+        out = ({"_error": 0, "_msg": str(e)}, 0)
+    if out[1] == 200:
+        _CACHE[ck] = out
+    return out
 
 
 # ------------------------------------------------------- parsing deps

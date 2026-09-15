@@ -2,11 +2,14 @@
 
 El director no manda a nadie a "buscar bugs al azar". Se busca un perfil
 de empresa: SaaS en crecimiento, codigo activo, sin senales de que ya
-tengan seguridad resuelta. Y se prioriza por DOLOR, no por tamano.
+tengan seguridad resuelta. Y se prioriza por DOLOR + CAPACIDAD DE PAGO,
+no por tamano.
 
-Criterio de oro: si el repo ya tiene SECURITY.md + CI con escaneo + rama
-protegida, NO es prospecto: esa empresa ya tiene alguien. El dinero esta
-en las que estan creciendo y no llegaron a eso todavia.
+Orden de ejecucion (importante para no gastar llamadas de API en basura):
+  1. buscar  -> candidatos crudos por lenguaje/estrellas/actividad
+  2. calificar ICP -> filtra repos sueltos, herramientas de hacking, VPNs...
+  3. auditar -> solo los que pasaron el filtro comercial
+  4. priorizar -> P1/P2/P3 combinando riesgo tecnico e indice comercial
 """
 from __future__ import annotations
 
@@ -16,6 +19,8 @@ import urllib.parse
 from datetime import datetime, timedelta, timezone
 
 from .scanner import _get, auditar
+from .icp import perfil, resuelto_o_no, prioridad_final
+from .report import estimar_precio
 
 ICP_DEFAULT = {
     "lenguajes": ["python", "javascript", "typescript", "go"],
@@ -27,15 +32,12 @@ ICP_DEFAULT = {
 
 def construir_query(lang: str, icp: dict) -> str:
     desde = (datetime.now(timezone.utc) - timedelta(days=icp["actividad_dias"])).date()
-    q = [
+    return " ".join([
         f"language:{lang}",
         f"stars:{icp['estrellas_min']}..{icp['estrellas_max']}",
         f"pushed:>{desde}",
-        "fork:false",
-        "archived:false",
-        "is:public",
-    ]
-    return " ".join(q)
+        "fork:false", "archived:false", "is:public",
+    ])
 
 
 def buscar_repos(lang: str, icp: dict, token: str | None = None, por_pagina: int = 30) -> list[dict]:
@@ -52,73 +54,73 @@ def buscar_repos(lang: str, icp: dict, token: str | None = None, por_pagina: int
         "estrellas": r.get("stargazers_count", 0),
         "lenguaje": r.get("language"),
         "descripcion": (r.get("description") or "")[:180],
-        "ultimo_push": r.get("pushed_at"),
+        "rama": r.get("default_branch", "main"),
     } for r in data.get("items", [])]
 
 
-def puntuar_lead(rep: dict) -> dict:
-    """Convierte una auditoria en un lead con prioridad comercial."""
+def puntuar_lead(rep: dict, icp_data: dict) -> dict:
+    """Combina la auditoria tecnica con la calificacion comercial."""
     h = rep.get("hallazgos", [])
     altos = sum(1 for f in h if f["severidad"] in ("critica", "alta"))
     ids = {f["id"] for f in h}
 
-    # Senales de que el prospecto tiene presupuesto y dolor.
-    senales = []
+    tecnicas = []
     if "SEC-002" in ids:
-        senales.append("posibles credenciales versionadas")
+        tecnicas.append("posibles credenciales versionadas")
     if "SEC-004" in ids:
-        senales.append("CI sin escaneo de dependencias")
+        tecnicas.append("CI sin escaneo de dependencias")
     if "SEC-007" in ids:
-        senales.append("rama principal sin proteccion")
+        tecnicas.append("rama principal sin proteccion")
     if "SEC-011" in ids:
-        senales.append("CVEs conocidos en dependencias")
+        tecnicas.append("CVEs conocidos en dependencias")
     if "SEC-001" in ids:
-        senales.append("sin politica de divulgacion")
+        tecnicas.append("sin politica de divulgacion")
+    if "SEC-012" in ids:
+        tecnicas.append("repo sin actividad")
 
-    # Madurez: si tiene muchas estrellas y actividad reciente, hay empresa real.
-    estrellas = rep.get("estrellas", 0)
-    if estrellas >= 200:
-        senales.append("traccion publica significativa")
-    elif estrellas >= 50:
-        senales.append("traccion media")
+    comerciales = icp_data.get("senales", [])
+    prioridad, accion = prioridad_final(
+        rep["score_riesgo"], icp_data.get("score_icp", 0), icp_data.get("presion_compliance", False))
 
-    score = rep["score_riesgo"] + altos * 6 + (8 if estrellas >= 200 else 0)
+    p = estimar_precio(rep)
+    sitio = icp_data.get("sitio") or ""
+    email = icp_data.get("email") or ""
 
-    if score >= 70:
-        prioridad, accion = "P1", "Contactar esta semana. Mensaje personalizado con 2 hallazgos."
-    elif score >= 45:
-        prioridad, accion = "P2", "Contactar en batch. Secuencia automatizada."
-    elif score >= 25:
-        prioridad, accion = "P3", "Nurturing: agregar a lista y reauditar en 60 dias."
-    else:
-        prioridad, accion = "DESCARTAR", "Sin superficie vendible."
-
-    from .report import estimar_precio
     return {
         "repo": rep["repo"],
         "url": rep.get("url"),
+        "owner": icp_data.get("owner"),
+        "sitio": sitio,
+        "email": email,
         "descripcion": rep.get("descripcion"),
         "lenguaje": rep.get("lenguaje"),
-        "estrellas": estrellas,
+        "estrellas": rep.get("estrellas", 0),
+        "contribuyentes": icp_data.get("contribuyentes", 0),
         "score_riesgo": rep["score_riesgo"],
+        "score_icp": icp_data.get("score_icp", 0),
         "banda": rep["banda"],
         "n_hallazgos": rep.get("n_hallazgos", 0),
         "hallazgos_altos": altos,
-        "senales": senales,
+        "senales_tecnicas": tecnicas,
+        "senales_comerciales": comerciales,
+        "presion_compliance": icp_data.get("presion_compliance", False),
         "prioridad": prioridad,
         "accion": accion,
-        "precio_objetivo_usd": estimar_precio(rep)["diagnostico_express_usd"],
-        "ticket_potencial_usd": estimar_precio(rep)["remediacion_estimada_usd"],
+        "precio_objetivo_usd": p["diagnostico_express_usd"],
+        "ticket_potencial_usd": p["remediacion_estimada_usd"],
     }
 
 
 def generar_leads(token: str | None = None, icp: dict | None = None,
                   por_lenguaje: int = 10, auditar_top: int = 12,
-                  con_osv: bool = True, delay: float = 1.0) -> list[dict]:
+                  con_osv: bool = True, delay: float = 1.0,
+                  solo_organizaciones: bool = True) -> list[dict]:
     icp = icp or ICP_DEFAULT
+
+    # 1. buscar ---------------------------------------------------------
     crudos: list[dict] = []
     for lang in icp["lenguajes"]:
-        print(f"[leadgen] buscando {lang}...")
+        print(f"[1/4] buscando {lang}...")
         crudos += buscar_repos(lang, icp, token, por_pagina=por_lenguaje)
         time.sleep(delay)
 
@@ -128,26 +130,46 @@ def generar_leads(token: str | None = None, icp: dict | None = None,
             continue
         vistos.add(c["repo"])
         unicos.append(c)
-
-    # Pre-filtro barato: prioriza por traccion antes de gastar llamadas de API.
     unicos.sort(key=lambda c: c["estrellas"], reverse=True)
-    objetivos = unicos[:auditar_top]
+    print(f"[1/4] {len(unicos)} candidatos crudos")
 
+    # 2. calificar ICP --------------------------------------------------
+    calificados = []
+    for i, c in enumerate(unicos, 1):
+        p = perfil(c["repo"], branch=c.get("rama", "main"))
+        if p.get("veredicto") == "DESCARTAR":
+            continue
+        if solo_organizaciones and not p.get("es_organizacion"):
+            continue
+        calificados.append((c, p))
+        time.sleep(delay * 0.5)
+    calificados.sort(key=lambda cp: cp[1]["score_icp"], reverse=True)
+    print(f"[2/4] {len(calificados)} pasan el filtro comercial")
+
+    # 3. auditar --------------------------------------------------------
     leads = []
-    for i, c in enumerate(objetivos, 1):
-        print(f"[leadgen] auditando {i}/{len(objetivos)} {c['repo']}...")
+    for i, (c, p) in enumerate(calificados[:auditar_top], 1):
+        print(f"[3/4] auditando {i}/{min(len(calificados), auditar_top)} {c['repo']}...")
         rep = auditar(c["repo"], token=token, con_osv=con_osv)
         if rep.get("error"):
             continue
-        leads.append(puntuar_lead(rep))
+        if resuelto_o_no(rep):
+            print(f"       - descartado: ya tiene la seguridad basica resuelta")
+            continue
+        leads.append(puntuar_lead(rep, p))
         time.sleep(delay)
 
+    # 4. priorizar ------------------------------------------------------
     leads.sort(key=lambda l: (
-        {"P1": 0, "P2": 1, "P3": 2, "DESCARTAR": 3}[l["prioridad"]], -l["score_riesgo"]))
+        {"P1": 0, "P2": 1, "P3": 2, "DESCARTAR": 3}[l["prioridad"]],
+        -(l["score_riesgo"] + l["score_icp"])))
+    print(f"[4/4] {len(leads)} prospectos priorizados")
     return leads
 
 
 def guardar(leads: list[dict], ruta: str = "out/leads.json") -> str:
+    import os
+    os.makedirs(os.path.dirname(ruta) or ".", exist_ok=True)
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump(leads, f, ensure_ascii=False, indent=2)
     return ruta

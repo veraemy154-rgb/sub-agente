@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico de exposición para SaaS · Pasa tu cuestionario de seguridad</title>
+<meta name="description" content="Inventario de exposición de tu repositorio, priorizado y mapeado a controles SOC 2. Informe en 48 horas. Desde US$ 290.">
+<style>
+  :root{
+    --bg:#0b0e14; --bg2:#111621; --card:#151b28; --line:#232c3d;
+    --txt:#e6ebf5; --dim:#97a3b8; --acc:#4ade80; --acc2:#38bdf8; --warn:#fbbf24;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:var(--acc2);text-decoration:none}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+  header{position:sticky;top:0;background:rgba(11,14,20,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:9}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-weight:700;letter-spacing:-.02em}
+  .logo span{color:var(--acc)}
+  nav a{color:var(--dim);margin-left:26px;font-size:15px}
+  nav a:hover{color:var(--txt)}
+  .btn{display:inline-block;background:var(--acc);color:#06120a;font-weight:700;padding:13px 26px;border-radius:8px;border:0;font-size:16px;cursor:pointer;letter-spacing:-.01em}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  section{padding:88px 0;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(32px,5.2vw,56px);line-height:1.08;letter-spacing:-.035em;font-weight:800}
+  h2{font-size:clamp(26px,3.4vw,38px);line-height:1.15;letter-spacing:-.03em;font-weight:800;margin-bottom:14px}
+  h3{font-size:19px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+  p.lead{font-size:19px;color:var(--dim);max-width:660px;margin:20px 0 0}
+  .grid{display:grid;gap:22px;margin-top:40px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:26px}
+  .card p{color:var(--dim);font-size:15px}
+  .tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin-bottom:16px}
+  .hero{padding:96px 0 84px;border-bottom:1px solid var(--line);
+    background:radial-gradient(900px 420px at 12% -8%,rgba(74,222,128,.13),transparent 60%),
+               radial-gradient(700px 380px at 92% 0%,rgba(56,189,248,.11),transparent 60%)}
+  .hero .cols{display:grid;grid-template-columns:1.15fr .85fr;gap:52px;align-items:start;margin-top:8px}
+  @media(max-width:900px){.hero .cols{grid-template-columns:1fr;gap:36px}}
+  .formbox{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:26px}
+  label{display:block;font-size:13px;font-weight:600;color:var(--dim);margin-bottom:7px}
+  input,textarea{width:100%;background:#0d121b;border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:12px 14px;font-size:15px;font-family:inherit;margin-bottom:14px}
+  input:focus,textarea:focus{outline:0;border-color:var(--acc)}
+  .formbox .btn{width:100%}
+  .fineprint{font-size:12.5px;color:#6b7789;margin-top:12px;line-height:1.5}
+  .checklist{list-style:none;margin-top:22px}
+  .checklist li{padding-left:28px;position:relative;margin-bottom:11px;color:var(--dim);font-size:15.5px}
+  .checklist li:before{content:"✓";position:absolute;left:0;color:var(--acc);font-weight:800}
+  .price{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1}
+  .price small{font-size:15px;font-weight:600;color:var(--dim);letter-spacing:0}
+  .hl{border-color:var(--acc);position:relative}
+  .hl:before{content:"Recomendado";position:absolute;top:-13px;left:26px;background:var(--acc);color:#06120a;
+    font-size:11.5px;font-weight:800;padding:4px 11px;border-radius:20px;letter-spacing:.04em}
+  .steps{counter-reset:s}
+  .step{position:relative;padding-left:56px;margin-bottom:30px}
+  .step:before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-2px;width:38px;height:38px;
+    border-radius:50%;background:var(--bg2);border:1px solid var(--acc);color:var(--acc);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px}
+  .step p{color:var(--dim);font-size:15.5px}
+  blockquote{background:var(--bg2);border-left:3px solid var(--acc);padding:20px 24px;border-radius:0 10px 10px 0;
+    color:var(--dim);font-size:15.5px}
+  blockquote cite{display:block;margin-top:10px;color:var(--txt);font-style:normal;font-size:14px;font-weight:600}
+  details{border-bottom:1px solid var(--line);padding:18px 0}
+  details summary{cursor:pointer;font-weight:600;font-size:17px;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary:after{content:"+";float:right;color:var(--acc);font-weight:800;font-size:21px;line-height:1}
+  details[open] summary:after{content:"−"}
+  details p{color:var(--dim);margin-top:12px;font-size:15.5px}
+  table{width:100%;border-collapse:collapse;margin-top:26px;font-size:15px}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-size:12.5px;text-transform:uppercase;letter-spacing:.07em}
+  .sev{font-weight:700}
+  .sev.a{color:#fb7185}.sev.m{color:var(--warn)}.sev.b{color:var(--acc2)}
+  footer{padding:44px 0;color:#6b7789;font-size:14px}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:5px 13px;font-size:13px;color:var(--dim);margin:0 8px 8px 0}
+  .ok{color:var(--acc)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">Escudo<span>.</span>app</div>
+    <nav>
+      <a href="#problema">El problema</a>
+      <a href="#entrega">Qué entregas</a>
+      <a href="#precio">Precio</a>
+      <a class="btn" style="padding:9px 18px;font-size:14px;margin-left:26px" href="#contacto">Pedir diagnóstico</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap cols">
+    <div>
+      <span class="pill">Solo lectura · Sin instalaciones · Sin interrumpir a tu equipo</span>
+      <h1>Tu próxima venta enterprise se va a caer por un documento, no por tu producto.</h1>
+      <p class="lead">
+        Antes de firmar, el departamento de compras de tu cliente grande te manda un
+        cuestionario de seguridad de 120 preguntas. La número 14 es siempre la misma:
+        <strong style="color:var(--txt)">¿cómo gestionan las vulnerabilidades?</strong>
+        Si la respuesta es "Snyk nos avisa", no pasas.
+      </p>
+      <ul class="checklist">
+        <li>Informe de exposición en 48 horas, sobre información pública</li>
+        <li>Cada hallazgo mapeado al control SOC 2 que te van a pedir</li>
+        <li>Plan de remediación priorizado por impacto sobre la auditoría</li>
+        <li>Lo implemento yo, o se lo paso a tu equipo</li>
+      </ul>
+    </div>
+
+    <div class="formbox" id="contacto">
+      <h3>Verifica tu exposición</h3>
+      <p style="color:var(--dim);font-size:14.5px;margin:6px 0 18px">
+        Pega la URL de tu repositorio público. Te devuelvo los puntos donde hoy no
+        puedes evidenciar gestión de vulnerabilidades.
+      </p>
+      <form id="f">
+        <label for="repo">Repositorio (github.com/empresa/proyecto)</label>
+        <input id="repo" name="repo" placeholder="github.com/tuempresa/tuapi" required>
+        <label for="email">Tu correo de trabajo</label>
+        <input id="email" name="email" type="email" placeholder="fundador@tuempresa.com" required>
+        <label for="msg">Contexto (opcional)</label>
+        <textarea id="msg" name="mensaje" rows="3" placeholder="Estamos empezando SOC 2 / nos lo pidió un cliente"></textarea>
+        <button class="btn" type="submit">Verificar exposición</button>
+        <p class="fineprint">
+          Reviso únicamente información pública y de forma pasiva. No exploto nada,
+          no instalo nada, no toco tus sistemas. No spam, no newsletter.
+        </p>
+        <p id="rst" class="fineprint ok" style="display:none"></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<section id="problema">
+  <div class="wrap">
+    <span class="tag">El problema real</span>
+    <h2>No es que seas inseguro. Es que no lo puedes demostrar.</h2>
+    <p class="lead">
+      La mayoría de los equipos de producto que reviso no tienen agujeros graves:
+      tienen <strong style="color:var(--txt)">huecos de evidencia</strong>. Hacen las cosas
+      bien, pero no hay registro automático de que las hacen bien. Y un auditor no
+      acepta "confía en mí" como control.
+    </p>
+    <div class="grid g3">
+      <div class="card">
+        <h3>La herramienta no es el control</h3>
+        <p>Snyk te dice qué está roto. No cierra el hallazgo, no documenta la decisión,
+        y no le responde al auditor. Detección y evidencia son dos trabajos distintos.</p>
+      </div>
+      <div class="card">
+        <h3>El costo no es la brecha</h3>
+        <p>Es el contrato que no se firma en noviembre porque el cuestionario quedó
+        pendiente en septiembre. Ese es el número que duele, y es 100× el precio de esto.</p>
+      </div>
+      <div class="card">
+        <h3>Tu equipo ya está ocupado</h3>
+        <p>Nadie en un equipo de 12 ingenieros va a priorizar dependabot.yml por encima
+        del roadmap. No es dejadez: es que esto siempre pierde contra las features.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="tag">Qué reviso</span>
+    <h2>Once puntos. Todos públicos. Todos verificables por ti.</h2>
+    <table>
+      <thead><tr><th>Hallazgo</th><th>Severidad</th><th>Control SOC 2</th></tr></thead>
+      <tbody>
+        <tr><td>Archivos de credenciales versionados en el repositorio</td><td class="sev a">Alta</td><td>CC6.1</td></tr>
+        <tr><td>CI sin escaneo de vulnerabilidades en dependencias</td><td class="sev a">Alta</td><td>CC7.1</td></tr>
+        <tr><td>Rama principal sin protección ni revisión obligatoria</td><td class="sev a">Alta</td><td>CC8.1</td></tr>
+        <tr><td>CVEs conocidos con versión parcheada disponible</td><td class="sev a">Alta</td><td>CC7.1</td></tr>
+        <tr><td>Sin CI/CD</td><td class="sev a">Alta</td><td>CC8.1</td></tr>
+        <tr><td>Sin análisis estático ni detección de secretos</td><td class="sev m">Media</td><td>CC7.1</td></tr>
+        <tr><td>Sin política pública de divulgación (SECURITY.md)</td><td class="sev m">Media</td><td>CC2.3</td></tr>
+        <tr><td>Repositorio sin actividad ni responsable</td><td class="sev m">Media</td><td>CC7.1</td></tr>
+        <tr><td>Sin .gitignore</td><td class="sev m">Media</td><td>CC6.1</td></tr>
+        <tr><td>Sin actualización automática de dependencias</td><td class="sev b">Baja</td><td>CC7.1</td></tr>
+        <tr><td>Sin licencia declarada</td><td class="sev b">Baja</td><td>Legal</td></tr>
+      </tbody>
+    </table>
+    <p class="fineprint" style="max-width:700px;margin-top:16px">
+      Reviso únicamente metadatos y nombres de archivo accesibles públicamente.
+      No descargo ni abro archivos que parezcan contener credenciales: los reporto, no los leo.
+    </p>
+  </div>
+</section>
+
+<section id="entrega">
+  <div class="wrap">
+    <span class="tag">Qué recibes</span>
+    <h2>Un documento que le puedes mandar a tu auditor.</h2>
+    <div class="grid g4">
+      <div class="card"><h3>Inventario</h3><p>Cada punto de exposición, con severidad y ubicación exacta.</p></div>
+      <div class="card"><h3>Priorización</h3><p>Impacto sobre la auditoría contra esfuerzo de implementación.</p></div>
+      <div class="card"><h3>Mapeo</h3><p>Cada hallazgo atado al control SOC 2 / ISO que te van a pedir.</p></div>
+      <div class="card"><h3>Plan</h3><p>Qué hacer, en qué orden, cuánto tarda. Ejecutable por tu equipo o por mí.</p></div>
+    </div>
+    <div class="grid g3" style="margin-top:32px">
+      <div class="steps">
+        <div class="step"><h3>Pegas tu repo</h3><p>Y me cuentas dónde estás: empezando SOC 2, o con un cliente grande esperando.</p></div>
+        <div class="step"><h3>Reviso y priorizo</h3><p>48 horas. Informe en tus manos, sin llamadas ni reuniones.</p></div>
+        <div class="step"><h3>Decides</h3><p>Lo ejecutas tú con el plan, o lo ejecuto yo. Si no hay nada grave, te lo digo.</p></div>
+      </div>
+      <div style="grid-column:span 2">
+        <blockquote>
+          "Pensé que me iban a vender miedo. Me entregaron once puntos concretos, tres
+          eran reales y dos los cerramos en una tarde. Pasamos el cuestionario del
+          cliente en diciembre."<br>
+          <cite>— CTO, SaaS B2B de 14 personas <span style="color:#6b7789">(ejemplo de formato; sustituir por testimonio real)</span></cite>
+        </blockquote>
+        <blockquote style="margin-top:16px;border-left-color:var(--acc2)">
+          "Lo que más valoro: no me inventaron criticidad. Dos cosas que yo creía graves
+          me dijeron que no lo eran. Eso me dio confianza para lo demás."<br>
+          <cite>— Fundador, plataforma de logística <span style="color:#6b7789">(ejemplo de formato; sustituir por testimonio real)</span></cite>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="precio">
+  <div class="wrap">
+    <span class="tag">Precio</span>
+    <h2>Precio fijo por entregable. Nunca por hora.</h2>
+    <div class="grid g3">
+      <div class="card">
+        <h3>Diagnóstico Express</h3>
+        <p class="price" style="margin:16px 0 4px">US$ <span style="color:var(--warn)">290</span></p>
+        <p style="font-size:14px">Precio de lanzamiento · después US$ 490</p>
+        <ul class="checklist">
+          <li>Hasta 3 repositorios</li>
+          <li>Informe en 48 horas</li>
+          <li>Plan priorizado + mapeo SOC 2</li>
+          <li>Llamada de 30 min de devolución</li>
+        </ul>
+        <a class="btn ghost" style="display:block;text-align:center;margin-top:22px" href="#contacto">Empezar</a>
+      </div>
+      <div class="card hl">
+        <h3>Remediación</h3>
+        <p class="price" style="margin:16px 0 4px">US$ 1.8k <small>– 4.5k</small></p>
+        <p style="font-size:14px">Cotizado con el diagnóstico en la mano</p>
+        <ul class="checklist">
+          <li>Implemento yo los arreglos</li>
+          <li>Pull requests revisables y mergeables</li>
+          <li>Pipeline de seguridad en tu CI</li>
+          <li>50% al firmar · 50% al mergear</li>
+        </ul>
+        <a class="btn" style="display:block;text-align:center;margin-top:22px" href="#contacto">Hablar de mi caso</a>
+      </div>
+      <div class="card">
+        <h3>Gestión continua</h3>
+        <p class="price" style="margin:16px 0 4px">US$ 1.2k <small>/mes</small></p>
+        <p style="font-size:14px">Para cuando el auditor pida evidencia recurrente</p>
+        <ul class="checklist">
+          <li>Escaneo continuo en CI</li>
+          <li>Informe mensual de evidencia</li>
+          <li>SLA de 72 h en hallazgos críticos</li>
+          <li>Excepciones documentadas y justificadas</li>
+        </ul>
+        <a class="btn ghost" style="display:block;text-align:center;margin-top:22px" href="#contacto">Consultar</a>
+      </div>
+    </div>
+    <p class="fineprint" style="max-width:720px;margin-top:26px">
+      Si el diagnóstico no encuentra nada relevante, te lo digo y te devuelvo el dinero.
+      prefiero un cliente que vuelve que una factura que discutir.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap" style="max-width:820px">
+    <span class="tag">Preguntas</span>
+    <h2>Lo que me preguntan antes de contratar</h2>
+    <details open><summary>¿Necesitas acceso a nuestro código?</summary>
+      <p>Para el diagnóstico, no. Trabajo sobre lo público. Para la remediación sí,
+      y ahí firmamos antes un alcance por escrito con qué repos entran, qué no se toca
+      y una ventana de fechas. Sin ese documento firmado, no empiezo.</p></details>
+    <details><summary>¿Esto es un pentest?</summary>
+      <p>No. Un pentest intenta entrar; esto documenta qué no puedes demostrar.
+      Son preguntas distintas y, para una auditoría, la segunda es la que te frena.
+      Si necesitas pentest para un requisito contractual, te lo digo y te recomiendo a alguien.</p></details>
+    <details><summary>Ya tenemos Snyk / Dependabot</summary>
+      <p>Perfecto, entonces ya tienes detección. Lo que te falta es quién cierra el
+      hallazgo y quién lo documenta para el auditor. Trabajo sobre lo que tu herramienta
+      ya encontró, no en paralelo a ella.</p></details>
+    <details><summary>Somos muy pequeños, nadie nos va a atacar</summary>
+      <p>No te va a atacar un atacante: te va a auditar el departamento de compras de tu
+      cliente. El riesgo que estás gestionando no es la brecha, es el contrato que no cierra.
+      Y si de verdad eres tan pequeño que esto no aplica, te lo digo en el diagnóstico.</p></details>
+    <details><summary>¿Qué pasa si encuentras algo grave?</summary>
+      <p>Te lo reporto a ti y solo a ti, por el canal que acordemos, con detalle de
+      remediación. No publico nada, nunca, sin tu permiso por escrito. No uso hallazgos
+      como presión comercial: eso sería extorsión, no consultoría.</p></details>
+  </div>
+</section>
+
+<section style="border-bottom:0">
+  <div class="wrap" style="text-align:center;max-width:720px">
+    <h2>Averigua qué te falta antes de que te lo pregunten.</h2>
+    <p class="lead" style="margin-left:auto;margin-right:auto">
+      48 horas, precio fijo, sin compromiso. Lo peor que puede pasar es que te diga
+      que estás en buen estado.
+    </p>
+    <a class="btn" style="margin-top:28px;padding:16px 34px;font-size:17px" href="#contacto">Verificar mi exposición · US$ 290</a>
+    <p class="fineprint" style="margin-top:18px">Respondo personalmente en menos de 24 horas hábiles.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <strong style="color:var(--txt)">Escudo.app</strong> · Seguridad aplicada para SaaS en crecimiento<br>
+    <span style="font-size:13px">
+      Metodología de solo lectura sobre información pública. Todo trabajo de remediación
+      requiere autorización escrita previa. Ningún hallazgo se divulga sin permiso expreso.
+    </span>
+  </div>
+</footer>
+
+<script>
+  // Apunta a tu API. Si no hay backend, cae a mailto.
+  var ENDPOINT = "";  // ej: "https://tu-vps.e2b.app/contacto"
+  document.getElementById('f').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var f = e.target, r = document.getElementById('rst');
+    var data = { repo: f.repo.value, email: f.email.value, mensaje: f.msg.value };
+    var body = encodeURIComponent(
+      "Repositorio: " + data.repo + "\nCorreo: " + data.email + "\nContexto: " + data.mensaje);
+    if (!ENDPOINT) {
+      window.location.href = "mailto:hola@escudo.app?subject=Verificar%20exposici%C3%B3n&body=" + body;
+      r.style.display = 'block';
+      r.textContent = 'Abriendo tu cliente de correo...';
+      return;
+    }
+    try {
+      var res = await fetch(ENDPOINT, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      r.style.display = 'block';
+      r.textContent = res.ok ? 'Recibido. Te respondo en menos de 24 h hábiles.'
+                             : 'Hubo un problema. Escríbeme a hola@escudo.app';
+      if (res.ok) f.reset();
+    } catch (err) {
+      window.location.href = "mailto:hola@escudo.app?subject=Verificar%20exposici%C3%B3n&body=" + body;
+    }
+  });
+</script>
+</body>
+</html>

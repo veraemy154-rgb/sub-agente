@@ -15,6 +15,7 @@ python run.py scan owner/repo              # auditoria de un repo
 python run.py scan owner/repo --md         # informe entregable al cliente
 python run.py leads --lang python,go --top 12
 python run.py outreach owner/repo --remitente "Tu Nombre"
+python run.py evidencia --demo             # informe mensual de evidencia (retainer)
 ```
 
 Con Docker (VPS):
@@ -31,8 +32,12 @@ Endpoints:
 | GET | `/` | estado y areas disponibles |
 | POST | `/task` | router heurístico de tareas (0 tokens) |
 | GET | `/scan?repo=owner/nombre` | auditoria + informe + precio sugerido |
-| POST | `/leads` | descubre prospectos, los audita y prioriza P1/P2/P3 |
+| POST | `/leads` | busca, califica ICP, audita y prioriza P1/P2/P3 |
 | POST | `/outreach` | secuencia de 5 toques lista para enviar |
+| POST | `/evidence` | informe mensual de evidencia (retainer) |
+| GET | `/evidence/demo` | informe de muestra para mostrar a un prospecto |
+| POST | `/contacto` | recibe los leads de la landing |
+| GET | `/site/` | landing page (`site/index.html`) |
 
 ## Estructura
 
@@ -42,11 +47,14 @@ app/
   router.py    clasificacion por keywords, sin coste de tokens
   scanner.py   auditoria pasiva: GitHub API + OSV, solo lectura
   report.py    informe entregable y estimacion de precio
+  icp.py       calificacion comercial: separa empresas con presupuesto de repos sueltos
   leadgen.py   descubrimiento y priorizacion comercial de prospectos
   outreach.py  mensajes de primer contacto (5 toques)
+  evidence.py  informe mensual de evidencia para el retainer
   main.py      API FastAPI
-templates/     SOW/autorizacion, precios, secuencia de prospeccion
+templates/     SOW/autorizacion, precios, secuencia, informe mensual de evidencia
 docs/          plan-90-dias.md · legal-y-etica.md
+site/          landing page de la oferta (index.html, sin dependencias)
 run.py         CLI
 ```
 
