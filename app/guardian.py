@@ -110,7 +110,9 @@ def informe(n: int = 20) -> str:
         L.append(f"  {a}")
     if coautores:
         L.append("")
-        L.append("=== CO-AUTORES (identifican a la sesion de agente) ===")
+        L.append("=== CO-AUTORES ===")
+        L.append("  OJO: la plataforma inyecta este trailer en TODOS los commits de")
+        L.append("  agente. No identifica a la sesion: no lo uses como prueba.")
         for co in coautores:
             L.append(f"  {co}")
     L.append("")
