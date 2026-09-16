@@ -25,6 +25,7 @@ Solo informacion publica: direcciones que la propia empresa publico.
 """
 from __future__ import annotations
 
+import io
 import re
 from urllib.parse import urlparse
 
@@ -146,6 +147,75 @@ def dominio_de(sitio: str) -> str:
     return ".".join(partes[-2:]) if len(partes) >= 2 else host
 
 
+
+
+# --- Verificacion de entrega -------------------------------------------------
+# Un SECURITY.md puede llevar anios copiado de una plantilla: pone security@
+# pero el buzon nunca se creo (ggui.ai reboto 550 5.1.1 teniendo MX de Google).
+# No podemos saber si un buzon existe, pero SI si el dominio recibe correo:
+# esposter.com tiene MX "ms28275001.msv1.invalid" = no recibe nada.
+# Se consulta por DNS sobre HTTPS: sin instalar dnspython, funciona en Termux.
+DOH = ("https://dns.google/resolve", "https://cloudflare-dns.com/dns-query")
+
+
+def mx_de(dominio: str) -> tuple[str, list[str]]:
+    """(estado, exchanges). estado: 'ok' | 'sin_correo' | 'error'."""
+    import json, time, urllib.parse
+    if not dominio or "." not in dominio:
+        return "error", []
+    for base in DOH:
+        for _ in range(2):
+            try:
+                u = base + "?name=" + urllib.parse.quote(dominio) + "&type=MX"
+                req = urllib.request.Request(
+                    u, headers={"User-Agent": "sub-agente",
+                                "Accept": "application/dns-json"})
+                d = json.loads(urllib.request.urlopen(req, timeout=12).read())
+                ex = [(a.get("data") or "").strip() for a in d.get("Answer", [])]
+                # El registro llega como "0 ms28275001.msv1.invalid." con punto
+                # final: sin quitarlo, endswith(".invalid") era False y el
+                # dominio sin correo colaba como valido.
+                hosts = []
+                for e in ex:
+                    partes = e.split()
+                    h = (partes[-1] if partes else e).rstrip(".").lower()
+                    if h:
+                        hosts.append(h)
+                if hosts:
+                    if all(h.endswith(".invalid") for h in hosts):
+                        return "sin_correo", hosts
+                    return "ok", hosts
+                if d.get("Status") == 0:      # NOERROR sin MX: no recibe correo
+                    return "sin_correo", []
+            except Exception:
+                time.sleep(0.3)
+    return "error", []
+
+
+def _ruta_rebotados() -> str:
+    import os
+    os.makedirs("out", exist_ok=True)
+    return os.path.join("out", "rebotados.json")
+
+
+def cargar_rebotados() -> set:
+    import json
+    try:
+        with io.open(_ruta_rebotados(), encoding="utf-8") as f:
+            return set(json.load(f))
+    except Exception:
+        return set()
+
+
+def registrar_rebote(email: str) -> int:
+    import json
+    r = cargar_rebotados()
+    r.add(email.strip().lower())
+    with io.open(_ruta_rebotados(), "w", encoding="utf-8") as f:
+        json.dump(sorted(r), f, indent=1)
+    return len(r)
+
+
 def peso(email: str, fuente: str) -> int:
     """Cuanto vale esta direccion. Manda el rol sobre la fuente."""
     local = email.split("@")[0].split("+")[0]
@@ -228,10 +298,18 @@ def buscar(repo_full: str, branch: str = "main", con_commits: bool = True,
         sitio = org2.get("blog") or ""
     sitio = sitio or meta.get("homepage") or ""
     dominio = dominio_de(sitio)
+    rebotados = cargar_rebotados()
     candidatos = [p for p in adivinar(dominio)
-                  if con_patrones and p not in visto]
+                  if con_patrones and p not in visto and p not in rebotados]
 
     hallados.sort(key=lambda h: -h["peso"])
+
+    mx_estado, mx_hosts = mx_de(dominio) if dominio else ("error", [])
+    if mx_estado == "sin_correo":
+        # ninguna direccion de ese dominio va a llegar: las de persona mandan
+        hallados = [h for h in hallados
+                    if h["email"].split("@")[-1] != dominio]
+        hallados.sort(key=lambda h: -h["peso"])
 
     # 6. Cruce con el ICP: no pierdas el tiempo con quien no va a comprar
     icp = None
@@ -242,6 +320,10 @@ def buscar(repo_full: str, branch: str = "main", con_commits: bool = True,
         except Exception as e:
             icp = {"veredicto": "?", "motivo": str(e)}
 
+    vivos = [h for h in hallados if h["email"] not in rebotados
+             and not (mx_estado == "sin_correo"
+                      and h["email"].split("@")[-1] == dominio)]
+
     descartado = bool(icp and icp.get("veredicto") == "DESCARTAR")
 
     return {
@@ -251,10 +333,15 @@ def buscar(repo_full: str, branch: str = "main", con_commits: bool = True,
         "dominio": dominio,
         "emails": hallados,
         "candidatos_sin_verificar": candidatos,
+        "mx": mx_estado,
+        "mx_hosts": mx_hosts,
+        "rebotados": rebotados,
         "icp": icp,
         "descartado": descartado,
-        "recomendado": (hallados[0]["email"] if hallados else
-                        (candidatos[0] if candidatos else "")),
+        # Una direccion que rebotó no se vuelve a recomendar: ggui.ai rebotó
+        # security@ y la herramienta seguia mandandote ahi.
+        "recomendado": ((vivos[0]["email"] if vivos else "")
+                        or (candidatos[0] if candidatos else "")),
     }
 
 
@@ -273,12 +360,24 @@ def a_texto(res: dict) -> str:
             L.append(">>> NO LE ESCRIBAS. El filtro ya lo rechazo. Siguiente.")
         else:
             L.append(f"ICP: {ver} (icp={sc})")
+    mx = res.get("mx")
+    if mx == "sin_correo":
+        L.append("AVISO: " + (res.get("dominio") or "?") +
+                 " NO recibe correo (MX nulo). Ninguna direccion de ese dominio")
+        L.append("       te va a llegar: usa la de una persona, no la de la empresa.")
+    elif mx == "ok":
+        L.append("MX: " + (res.get("dominio") or "?") + " recibe correo ("
+                 + (res["mx_hosts"][0] if res.get("mx_hosts") else "?") + ")")
     L.append("")
 
     if res["emails"]:
         L.append("ENCONTRADOS (publicados por ellos mismos):")
         for h in res["emails"]:
-            L.append(f"  {h['email']:40} peso {h['peso']:3}  {h['fuente']:11} {h['detalle']}")
+            marca = "  <-- REBOTO" if h["email"] in (res.get("rebotados") or set()) else ""
+            L.append(f"  {h['email']:40} peso {h['peso']:3}  {h['fuente']:11} "
+                     f"{h['detalle']}{marca}")
+        if any(h["email"] in (res.get("rebotados") or set()) for h in res["emails"]):
+            L.append("  (los marcados rebotaron antes: no los vuelvas a usar)")
     else:
         L.append("No se encontro ningun correo publicado.")
 
@@ -291,11 +390,18 @@ def a_texto(res: dict) -> str:
     L.append("")
     if res.get("descartado"):
         L.append("Recomendado: NINGUNO (descartado por ICP)")
+    elif not res["recomendado"]:
+        L.append("Recomendado: NINGUNO (todo lo demas rebotó o no recibe correo)")
     else:
-        L.append(f"Recomendado: {res['recomendado'] or 'ninguno'}")
+        L.append(f"Recomendado: {res['recomendado']}")
         if res["emails"]:
-            top = res["emails"][0]
+            # el aviso debe ir con el recomendado, no con el que rebotó
+            top = next((h for h in res["emails"]
+                        if h["email"] == res["recomendado"]), res["emails"][0])
             if top["fuente"] == "SECURITY.md" or top["email"].startswith("security@"):
                 L.append("  ^ Sale de su politica de seguridad: es la persona que")
                 L.append("    YA tiene el problema. Escribele primero.")
+                L.append("  OJO: los SECURITY.md suelen ser plantilla copiada y el")
+                L.append("  buzon a veces no existe (ggui.ai reboto 550). Si rebota,")
+                L.append("  pasa al correo de una persona y anotalo: --rebotado X")
     return "\n".join(L)

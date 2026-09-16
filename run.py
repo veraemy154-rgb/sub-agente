@@ -28,7 +28,8 @@ from app.fuentes import filtrar, a_markdown, NIVELES
 from app.analisis import redactar, post_linkedin
 from app import pipeline as pipe
 from app.guardian import informe as guardian_informe
-from app.contacto import buscar as buscar_contacto, a_texto as contacto_texto
+from app.contacto import (buscar as buscar_contacto, a_texto as contacto_texto,
+                          registrar_rebote)
 
 
 def cmd_scan(a):
@@ -336,6 +337,11 @@ def cmd_doctor(a):
 
 
 def cmd_contacto(a):
+    if a.rebotado:
+        n = registrar_rebote(a.rebotado)
+        print(f"Anotado: {a.rebotado.lower()} ({n} rebotes registrados)")
+        print("No lo volvera a recomendar.")
+        return 0
     if a.repos:
         for r in [x.strip() for x in a.repos.split(",") if x.strip()]:
             print(contacto_texto(buscar_contacto(r, con_patrones=not a.sin_patrones)))
@@ -440,6 +446,8 @@ def main():
     ct.add_argument("--desde-leads", default="")
     ct.add_argument("--top", type=int, default=10)
     ct.add_argument("--sin-patrones", action="store_true")
+    ct.add_argument("--rebotado", default="",
+                    help="anota una direccion que rebotó para no repetirla")
     ct.set_defaults(fn=cmd_contacto)
 
     g = sub.add_parser("guardian", help="quien ha tocado el codigo y con que autorizacion")
