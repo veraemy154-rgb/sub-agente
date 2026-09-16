@@ -24,7 +24,7 @@ from app.outreach import secuencia
 from app.icp import perfil
 from app.leadgen import puntuar_lead
 from app.evidence import generar, ejemplo, mes_actual
-from app.fuentes import filtrar, a_markdown, NIVELES
+from app.fuentes import filtrar, a_markdown as fuentes_markdown, NIVELES
 from app.analisis import redactar, post_linkedin
 from app import pipeline as pipe
 from app.guardian import informe as guardian_informe
@@ -369,7 +369,7 @@ def cmd_guardian(a):
 def cmd_fuentes(a):
     nivel = a.nivel or None
     if a.md:
-        print(a_markdown(nivel))
+        print(fuentes_markdown(nivel))
         return 0
     for n in sorted(NIVELES):
         fs = [f for f in filtrar() if f[1] == n and (not nivel or n == nivel)]
