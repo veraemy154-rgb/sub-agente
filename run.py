@@ -28,6 +28,7 @@ from app.fuentes import filtrar, a_markdown, NIVELES
 from app.analisis import redactar, post_linkedin
 from app import pipeline as pipe
 from app.guardian import informe as guardian_informe
+from app.contacto import buscar as buscar_contacto, a_texto as contacto_texto
 
 
 def cmd_scan(a):
@@ -334,6 +335,26 @@ def cmd_doctor(a):
     return 0
 
 
+def cmd_contacto(a):
+    if a.repos:
+        for r in [x.strip() for x in a.repos.split(",") if x.strip()]:
+            print(contacto_texto(buscar_contacto(r, con_patrones=not a.sin_patrones)))
+            print()
+        return 0
+    if a.desde_leads:
+        import json, os
+        if not os.path.exists(a.desde_leads):
+            print("No existe " + a.desde_leads)
+            return 1
+        leads = json.load(open(a.desde_leads, encoding="utf-8"))
+        for l in leads[:a.top]:
+            print(contacto_texto(buscar_contacto(l["repo"], con_patrones=not a.sin_patrones)))
+            print()
+        return 0
+    print("Indica --repos owner/repo,... o --desde-leads out/leads.json")
+    return 1
+
+
 def cmd_guardian(a):
     print(guardian_informe(a.n))
     return 0
@@ -413,6 +434,13 @@ def main():
     n.set_defaults(fn=cmd_analisis)
 
     sub.add_parser("doctor", help="diagnostica el entorno y la copia del repo").set_defaults(fn=cmd_doctor)
+
+    ct = sub.add_parser("contacto", help="encontrar el correo sin pagar LinkedIn")
+    ct.add_argument("--repos", default="")
+    ct.add_argument("--desde-leads", default="")
+    ct.add_argument("--top", type=int, default=10)
+    ct.add_argument("--sin-patrones", action="store_true")
+    ct.set_defaults(fn=cmd_contacto)
 
     g = sub.add_parser("guardian", help="quien ha tocado el codigo y con que autorizacion")
     g.add_argument("--n", type=int, default=20)
