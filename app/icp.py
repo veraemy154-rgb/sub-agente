@@ -35,6 +35,7 @@ W = {
     "consumo_no_b2b": -14,
     "demasiado_grande": -35,
     "seguridad_ya_resuelta": -30,
+    "muchos_repos_poco_equipo": -10,
 }
 
 # Tu comprador: demasiado pequeno para tener CISO, demasiado grande para
@@ -216,15 +217,7 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
     if es_org:
         org_meta, _ = _get(f"/orgs/{login}")
 
-    # Rechazo duro por portafolio: 60+ repos publicos es una empresa que ya
-    # tiene estructura de seguridad, o un proyecto de comunidad. Fuera.
     n_repos = org_meta.get("public_repos", owner.get("public_repos", 0)) or 0
-    if n_repos > REPOS_MAX_VENDIBLE:
-        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
-                "senales": [], "estrellas": estrellas, "owner": login,
-                "repos_publicos": n_repos,
-                "motivo": f"demasiado grande ({n_repos} repos publicos): "
-                          f"probable equipo de seguridad propio"}
 
     sitio = org_meta.get("blog") or meta.get("homepage") or ""
     inst = es_institucion(login, sitio, descripcion,
@@ -237,6 +230,21 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
 
     contrib, _ = _get(f"/repos/{repo_full}/contributors?per_page=100&anon=false")
     n_contrib = len(contrib) if isinstance(contrib, list) else 0
+
+    # Rechazo duro por portafolio, pero con las DOS senales a la vez.
+    # 60+ repos por si solo NO significa empresa grande: Whop publica 68
+    # porque es un unico producto empaquetado como SDK en muchos lenguajes,
+    # y descartarlo era un falso negativo (probe a contar lenguajes distintos
+    # y era peor: Forus tiene 7 en 10 repos frente a los 12 en 68 de Whop).
+    # Lo que delata estructura de seguridad propia es mucho codigo publico
+    # Y mucha gente detras de ese codigo.
+    if n_repos > REPOS_MAX_VENDIBLE and n_contrib > CONTRIB_MAX_IDEAL:
+        return {"repo": repo_full, "veredicto": "DESCARTAR", "score_icp": 0,
+                "senales": [], "estrellas": estrellas, "owner": login,
+                "repos_publicos": n_repos, "contribuyentes": n_contrib,
+                "motivo": f"demasiado grande ({n_repos} repos publicos y "
+                          f"{n_contrib}+ contribuyentes): "
+                          f"probable equipo de seguridad propio"}
 
     # Suelo duro: 1 sola persona no es una empresa. No hay quien compre.
     if n_contrib < 2:
@@ -294,6 +302,10 @@ def perfil(repo_full: str, branch: str = "main", senales_seguridad: dict | None 
 
     if n_repos >= 5:
         add("portafolio_5_plus", f"{n_repos} repos publicos (portafolio)")
+    if n_repos > REPOS_MAX_VENDIBLE:
+        add("muchos_repos_poco_equipo",
+            f"{n_repos} repos pero sin equipo grande: puede ser un producto "
+            f"publicado como SDK en varios lenguajes, no una empresa enorme")
 
     # Punto dulce: la empresa mediana. La grande ya tiene CISO (y ya salio por
     # regla mas arriba), la de una persona no tiene tarjeta.
