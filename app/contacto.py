@@ -216,6 +216,18 @@ def registrar_rebote(email: str) -> int:
     return len(r)
 
 
+
+
+def meses_desde(iso: str):
+    """Meses desde una fecha ISO. None si no se puede interpretar."""
+    try:
+        from datetime import datetime, timezone
+        f = datetime.fromisoformat((iso or "").replace("Z", "+00:00"))
+        return int((datetime.now(timezone.utc) - f).days / 30.44)
+    except Exception:
+        return None
+
+
 def peso(email: str, fuente: str) -> int:
     """Cuanto vale esta direccion. Manda el rol sobre la fuente."""
     local = email.split("@")[0].split("+")[0]
@@ -256,6 +268,7 @@ def buscar(repo_full: str, branch: str = "main", con_commits: bool = True,
 
     hallados: list[dict] = []
     visto = set()
+    ultimo_commit: dict[str, str] = {}
 
     def agregar(email: str, fuente: str, detalle: str = ""):
         if email in visto:
@@ -282,9 +295,13 @@ def buscar(repo_full: str, branch: str = "main", con_commits: bool = True,
             for c in commits:
                 ca = (c.get("commit") or {}).get("author") or {}
                 nom = ca.get("name") or ""
+                fecha = ca.get("date") or ""
                 lim = limpiar(ca.get("email") or "", nom)
                 if lim:
                     agregar(lim, "commit", f"autor: {nom or '?'}")
+                    if fecha and (lim not in ultimo_commit
+                                  or fecha > ultimo_commit[lim]):
+                        ultimo_commit[lim] = fecha
 
     # 4. README y similares
     for ruta in RUTAS_GENERALES:
@@ -301,6 +318,38 @@ def buscar(repo_full: str, branch: str = "main", con_commits: bool = True,
     rebotados = cargar_rebotados()
     candidatos = [p for p in adivinar(dominio)
                   if con_patrones and p not in visto and p not in rebotados]
+    # El blog de la org puede ser here.io mientras los correos reales son
+    # openfin.co: generar candidatos tambien sobre los dominios corporativos
+    # que aparecen en los commits, no solo sobre el de la web.
+    if con_patrones:
+        for d in sorted({e.split("@")[-1] for e in visto
+                         if e.split("@")[-1] not in FREEMAIL}):
+            if d != dominio:
+                for pc in adivinar(d):
+                    if pc not in visto and pc not in rebotados \
+                            and pc not in candidatos:
+                        candidatos.append(pc)
+
+    # Quien no commitea hace dos anos probablemente ya no trabaja ahi: su
+    # cuenta de Workspace esta desactivada y rebota 550 5.2.1 DisabledUser.
+    # Dar el mismo peso a un autor de 2019 que a uno de la semana pasada
+    # era un error, y nos costo un rebote real.
+    for h in hallados:
+        f = ultimo_commit.get(h["email"])
+        if not f:
+            continue
+        h["ultimo_commit"] = f[:10]
+        m = meses_desde(f)
+        if m is None:
+            continue
+        if m > 24:
+            h["peso"] -= 45
+            h["aviso"] = f"sin commits hace {m} meses: puede no trabajar ya ahi"
+        elif m > 12:
+            h["peso"] -= 20
+            h["aviso"] = f"ultimo commit hace {m} meses"
+        elif m <= 3:
+            h["peso"] += 10
 
     hallados.sort(key=lambda h: -h["peso"])
 
@@ -374,8 +423,10 @@ def a_texto(res: dict) -> str:
         L.append("ENCONTRADOS (publicados por ellos mismos):")
         for h in res["emails"]:
             marca = "  <-- REBOTO" if h["email"] in (res.get("rebotados") or set()) else ""
+            if h.get("aviso"):
+                marca += "  <-- " + h["aviso"]
             L.append(f"  {h['email']:40} peso {h['peso']:3}  {h['fuente']:11} "
-                     f"{h['detalle']}{marca}")
+                     f"{(h.get('ultimo_commit','') + ' ' + h['detalle']).strip()}{marca}")
         if any(h["email"] in (res.get("rebotados") or set()) for h in res["emails"]):
             L.append("  (los marcados rebotaron antes: no los vuelvas a usar)")
     else:
