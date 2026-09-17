@@ -406,6 +406,13 @@ def a_texto(res: dict) -> str:
                 L.append("  pasa al correo de una persona y anotalo: --rebotado X")
     if res.get("recomendado"):
         L.append("")
-        L.append("  COPIA ESTA LINEA TAL CUAL (sin traducir y sin reescribir):")
+        if res.get("descartado"):
+            # Un repo descartado por el ICP no es prospecto para VENDER, pero
+            # aun puede haber que escribirle: un favor, o avisar de un fallo.
+            # Antes decias "no le escribas" y acto seguido dabas la direccion.
+            L.append("  No es prospecto para vender, pero si necesitas escribirle")
+            L.append("  (un favor, o avisar de una vulnerabilidad), esta es:")
+        else:
+            L.append("  COPIA ESTA LINEA TAL CUAL (sin traducir y sin reescribir):")
         L.append("      " + res["recomendado"])
     return "\n".join(L)
