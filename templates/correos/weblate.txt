@@ -1,0 +1,20 @@
+PARA: michal@weblate.org
+ASUNTO: wlc: CI has no dependency scanning or secret detection
+
+Hi Michal,
+
+I reviewed WeblateOrg/wlc. Three things an enterprise buyer asks about in a security review, and that I couldn't find evidence of:
+
+1. No dependency vulnerability scanning in CI (CC7.1 / CC8.1)
+2. No static analysis or secret detection in the pipeline (CC7.1 / CC8.1)
+3. No Dependabot or Renovate keeping dependencies current (CC7.1)
+
+You already publish a SECURITY.md, so the disclosure side is covered. What's missing is the part a customer's security questionnaire actually asks for: evidence that the checks run on every commit, not just that a policy exists.
+
+I do remediation plus the evidence pack. Fixed scope, about a week.
+
+Want the detail?
+
+Eduardo Vera
+Vulnerability remediation & security evidence for SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)

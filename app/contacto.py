@@ -52,6 +52,17 @@ BASURA = (
 BOT = ("bot", "agent", "-ci", "ci-", "actions", "automation", "dependabot",
        "renovate", "copilot", "sweeper", "cron")
 
+# Los agentes de IA ya firman commits y su correo colaba como el mejor
+# contacto del repo: grok@x.ai ("Grok Build") y cursoragent@cursor.com
+# ("Cursor AI") salieron primeros en ai-ecoverse/slicc. Escribirles es
+# escribirle a una maquina. Se buscan como subcadenas porque los locales
+# van pegados: cursoragent, claudebot, etc.
+AGENTES_IA = (
+    "grok", "cursor", "codex", "claude", "anthropic", "gemini", "devin",
+    "copilot", "codeium", "aider", "sourcery", "coderabbit", "windsurf",
+    "lovable", "openai", "chatgpt", "mistral", "perplexity",
+)
+
 ROLES = {
     "security": 100, "sec": 100, "vulnerability": 100, "vuln": 100, "abuse": 45,
     "founder": 80, "founders": 80, "ceo": 80, "cto": 75, "owner": 70,
@@ -114,6 +125,15 @@ def limpiar(email: str, autor: str = "") -> str | None:
     if any(t in BOT for t in re.split(r"[^a-z]+", local)):
         return None
     if (autor or "").lower().count("bot") or (autor or "").lower().endswith("agent"):
+        return None
+    # agentes de IA: por el local del correo y por el nombre del autor
+    if any(a in local for a in AGENTES_IA):
+        return None
+    nombre = (autor or "").lower()
+    if any(a in nombre for a in AGENTES_IA):
+        return None
+    # "Cursor AI", "Grok Build AI": el token suelto 'ai' delata al agente
+    if "ai" in re.split(r"[^a-z]+", nombre):
         return None
     return e
 
