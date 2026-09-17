@@ -1,0 +1,20 @@
+PARA: vidhi.patel@here.io
+ASUNTO: workspace-starter: no dependency scanning or secret detection in CI
+
+Hi Vidhi,
+
+I reviewed built-on-openfin/workspace-starter. Three things the security review at a bank or a trading firm asks about, and that I couldn't find evidence of:
+
+1. No dependency vulnerability scanning in CI (CC7.1)
+2. No static analysis or secret detection in the pipeline (CC7.1 / CC8.1)
+3. No published vulnerability disclosure policy (CC2.3)
+
+Your customers run this on trading floors, so their third-party risk teams will ask for exactly this before rollout.
+
+I do remediation plus the evidence pack, so the answer is ready instead of assembled at the last minute. Fixed scope, about a week.
+
+Want the detail?
+
+Eduardo Vera
+Vulnerability remediation & security evidence for SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)

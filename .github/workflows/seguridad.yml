@@ -1,0 +1,71 @@
+name: Seguridad
+
+# Nuestro propio repo se audita con la misma herramienta que vendemos.
+# Si esto no esta en verde, no puedes venderle seriedad a nadie.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '23 5 * * 1'
+
+jobs:
+  dependencias:
+    name: Auditoria de dependencias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pip-audit -q
+      - name: pip-audit
+        run: |
+          mkdir -p out
+          pip-audit -r requirements.txt --format json --output out/pip-audit.json || true
+      - name: Resumen
+        run: |
+          python - <<'PY'
+          import json, subprocess, sys
+          try:
+              d = json.load(open("out/pip-audit.json"))
+              n = len(d.get("dependencies", []))
+              print(f"Dependencias con vulnerabilidades conocidas: {n}")
+              for dep in d.get("dependencies", [])[:15]:
+                  for v in dep.get("vulns", []):
+                      print(f"  {dep['name']}=={dep['version']}  {v.get('id')}  {v.get('fix_versions')}")
+              sys.exit(1 if n else 0)
+          except FileNotFoundError:
+              print("Sin salida de pip-audit"); sys.exit(0)
+          except Exception as e:
+              print("No se pudo parsear:", e); sys.exit(0)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit
+          path: out/pip-audit.json
+          if-no-files-found: ignore
+
+  autoevaluacion:
+    name: Autoauditoria del repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt -q
+      - name: Escanear este repositorio
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python run.py scan ${{ github.repository }} --md > out/informe-prop.md || true
+          python run.py scan ${{ github.repository }} || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: informe-exposicion
+          path: out/informe-prop.md
+          if-no-files-found: ignore

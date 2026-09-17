@@ -1,0 +1,20 @@
+PARA: carloshvp@gmail.com
+ASUNTO: cmcp: six credential-style files and no scanning in CI
+
+Hi Carlos,
+
+I reviewed agentrust-io/cmcp. Three things an enterprise security review asks about, and that I couldn't find evidence of:
+
+1. Six files in the tree with credential-style names — worth confirming none of them carry anything real into the repository (CC6.1)
+2. No dependency vulnerability scanning in CI (CC7.1 / CC8.1)
+3. No static analysis or secret detection in the pipeline (CC7.1 / CC8.1)
+
+Your buyers will ask for this before they sign, and it's much cheaper to have the answer ready than to assemble it under a deadline.
+
+I do remediation plus the evidence pack. Fixed scope, about a week.
+
+Want the detail?
+
+Eduardo Vera
+Vulnerability remediation & security evidence for SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)
