@@ -69,6 +69,7 @@ def buscar_repos(lang: str, icp: dict, token: str | None = None, por_pagina: int
         "lenguaje": r.get("language"),
         "descripcion": (r.get("description") or "")[:180],
         "rama": r.get("default_branch", "main"),
+        "pushed_at": r.get("pushed_at"),
     } for r in data.get("items", [])]
 
 
@@ -100,9 +101,23 @@ def puntuar_lead(rep: dict, icp_data: dict) -> dict:
     sitio = icp_data.get("sitio") or ""
     email = icp_data.get("email") or ""
 
+    # Un repo que no se toca hace tiempo tiene detras gente que ya se fue:
+    # sus correos rebotan 550 5.2.1. La antiguedad del push es la senal mas
+    # barata de si el prospecto esta vivo AHORA.
+    push = rep.get("pushed_at") or ""
+    dias_push = None
+    if push:
+        try:
+            from datetime import datetime, timezone
+            f = datetime.fromisoformat(str(push).replace("Z", "+00:00"))
+            dias_push = (datetime.now(timezone.utc) - f).days
+        except Exception:
+            dias_push = None
+
     return {
         "repo": rep["repo"],
         "url": rep.get("url"),
+        "dias_desde_push": dias_push,
         "owner": icp_data.get("owner"),
         "sitio": sitio,
         "email": email,
@@ -170,6 +185,9 @@ def generar_leads(token: str | None = None, icp: dict | None = None,
         if resuelto_o_no(rep):
             print(f"       - descartado: ya tiene la seguridad basica resuelta")
             continue
+        # el informe de auditoria no trae la fecha de push, y sin ella no
+        # podemos saber si el prospecto esta vivo hoy
+        rep["pushed_at"] = c.get("pushed_at")
         leads.append(puntuar_lead(rep, p))
         time.sleep(delay)
 

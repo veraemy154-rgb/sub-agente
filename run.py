@@ -54,18 +54,25 @@ def cmd_scan(a):
 
 def cmd_leads(a):
     icp = {**ICP_DEFAULT, "lenguajes": [l.strip() for l in a.lang.split(",") if l.strip()]}
+    if a.activo:
+        icp["actividad_dias"] = a.activo
     leads = generar_leads(icp=icp, por_lenguaje=a.por_lang, auditar_top=a.top,
                           con_osv=not a.no_osv, delay=a.delay,
                           solo_organizaciones=not a.incluir_usuarios)
     ruta = guardar(leads, a.out)
-    print(f"\n{'PRIO':10} {'R':>3} {'ICP':>4} {'CON':>4}  {'REPO':40} {'TICKET':>7}")
-    print("-" * 88)
+    print(f"\n{'PRIO':10} {'R':>3} {'ICP':>4} {'CON':>4}  {'REPO':38} {'TICKET':>7} {'PUSH':>6}")
+    print("-" * 94)
     for l in leads:
+        d = l.get("dias_desde_push")
+        cuando = f"{d}d" if d is not None else "?"
+        if d is not None and d <= 7:
+            cuando += " HOY"
         print(f"{l['prioridad']:10} {l['score_riesgo']:3} {l['score_icp']:4} "
-              f"{l['contribuyentes']:4}  {l['repo'][:40]:40} {l['ticket_potencial_usd']:7}")
+              f"{l['contribuyentes']:4}  {l['repo'][:38]:38} {l['ticket_potencial_usd']:7} "
+              f"{cuando:>6}")
         for s in l["senales_comerciales"][:2]:
             print(f"{'':26}-> {s}")
-    print("-" * 88)
+    print("-" * 94)
     print(f"Pipeline potencial: US$ {sum(l['ticket_potencial_usd'] for l in leads):,}")
     print(f"Guardado en {ruta}")
     return 0
@@ -403,6 +410,8 @@ def main():
     l.add_argument("--delay", type=float, default=1.0)
     l.add_argument("--out", default="out/leads.json")
     l.add_argument("--no-osv", action="store_true")
+    l.add_argument("--activo", type=int, default=None,
+                   help="solo repos con push en los ultimos N dias (default 120)")
     l.add_argument("--incluir-usuarios", action="store_true",
                    help="incluir repos de usuarios (por defecto solo organizaciones)")
     l.set_defaults(fn=cmd_leads)
