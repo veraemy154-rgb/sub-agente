@@ -1,0 +1,20 @@
+PARA: security@forus.io
+ASUNTO: forus-backend: dependency scanning + 3 credential-named files
+
+Hi,
+
+I reviewed teamforus/forus-backend. Three things a SOC 2 or HITRUST reviewer asks about that I couldn't find evidence of:
+
+1. No dependency vulnerability scanning in CI (CC7.1)
+2. No static analysis or secret scanning in the pipeline (CC7.1 / CC8.1)
+3. Three files in the tree with credential-style names (CC6.1) — worth confirming none of them carry anything real into the repo
+
+With SOC 2, HIPAA, HITRUST and enterprise questionnaires all on the same plate, the bottleneck is rarely finding the issue — it's turning each one into evidence you can hand over.
+
+That's what I do: remediation plus the evidence pack. Fixed scope, about a week.
+
+Want the detail?
+
+Eduardo Vera
+Vulnerability remediation & security evidence for SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)

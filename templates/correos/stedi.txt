@@ -1,0 +1,18 @@
+PARA: security@stedi.com
+ASUNTO: Stedi/jsonata-rs: 29/100 on the checks your auditors ask about
+
+Hi,
+
+I ran a review over Stedi/jsonata-rs. Three controls that SOC 2 Type II and HIPAA reviewers ask about:
+
+1. No dependency vulnerability scanning in CI (CC7.1)
+2. No static analysis or secret detection (CC7.1 / CC8.1)
+3. No automated dependency updates (CC8.1)
+
+You already maintain both frameworks, so this isn't starting from zero. It's about the security engineer you're hiring inheriting working evidence instead of a backlog on day one.
+
+Fixed scope, US$ 490, about a week. Want the detail?
+
+Eduardo Vera
+Vulnerability remediation & security evidence for SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)
