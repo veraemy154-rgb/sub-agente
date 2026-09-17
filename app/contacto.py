@@ -404,4 +404,8 @@ def a_texto(res: dict) -> str:
                 L.append("  OJO: los SECURITY.md suelen ser plantilla copiada y el")
                 L.append("  buzon a veces no existe (ggui.ai reboto 550). Si rebota,")
                 L.append("  pasa al correo de una persona y anotalo: --rebotado X")
+    if res.get("recomendado"):
+        L.append("")
+        L.append("  COPIA ESTA LINEA TAL CUAL (sin traducir y sin reescribir):")
+        L.append("      " + res["recomendado"])
     return "\n".join(L)
