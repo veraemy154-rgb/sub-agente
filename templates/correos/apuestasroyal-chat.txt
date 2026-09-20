@@ -1,0 +1,36 @@
+LEAD: apuestasroyal.com (US$ 1.200) · canal: CHAT (prefieren chat al correo)
+Opciones: chat de apuestasroyal.com (24/7) o Telegram t.me/apuestasroyaloficial
+Es una casa de apuestas venezolana: escribe en ESPANOL.
+
+--- MENSAJE 1 ---
+
+Hola, buen dia. ¿Quien atiende lo tecnico?
+
+Encontre una falla de seguridad en la pagina publica de resultados que enlaza
+a su sitio (la de ruletaroyal.github.io): los datos que llegan de su API se
+insertan en la pagina sin sanitizar, y eso permite inyeccion de scripts (XSS)
+a quien controle esa respuesta. Ademas carga jQuery 3.3.1, que tiene
+vulnerabilidades conocidas desde 2018, y los archivos del CDN van sin firma
+de integridad.
+
+Lo encontre revisando un repositorio publico. No toque nada de su operacion.
+
+Lo puedo dejar corregido y documentado en una semana, precio fijo.
+¿Con quien hablo?
+
+--- SI PREGUNTAN EL PRECIO ---
+
+1.200 USD fijo: correccion de la pagina, actualizacion de librerias con firma
+de integridad, y un informe tecnico de lo corregido.
+
+--- SI DICEN "ESA PAGINA NO ES NUESTRA" ---
+
+El dominio que alimenta esa pagina es suyo (artesting.apuestasroyal.com), asi
+que la exposicion tambien lo es. Y es su cara publica en los resultados de
+busqueda de "resultados animalitos".
+
+--- SI PIDEN PRUEBA ---
+
+Les describes el mecanismo (donde se inserta el dato y por que el navegador
+lo ejecuta), NUNCA un payload listo. La demo se hace en una copia local con
+su permiso por escrito.
