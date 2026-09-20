@@ -1,0 +1,23 @@
+PARA: (el favor)
+ASUNTO: Revisión de RULETA-ROYAL — informe
+
+Hola:
+
+Te dejo la revisión de RULETA-ROYAL. Índice de exposición 40/100 — 5 hallazgos, ninguno crítico.
+
+Los dos que miraría primero:
+
+- No hay CI/CD: no hay ningún sitio donde colgar controles automáticos. Todo depende de que alguien se acuerde de revisar.
+- No hay .gitignore: es cuestión de tiempo que se suba un .env o una clave al historial.
+
+Y uno que es solo tuyo: el ID de tu Google Sheets está publicado en el repositorio. Si esa hoja está "publicada en la web", cualquiera puede leerla entera, no solo lo que muestra la app. Échale un ojo.
+
+Cada hallazgo trae el control al que responde y el arreglo para copiar y pegar.
+
+Aclaro qué es esto: una lectura de la superficie pública del repo. No ejecuté nada contra tu app ni accedí a nada privado. No es una auditoría ni sustituye una.
+
+PD: Cuando quieras el diagnóstico completo con el plan de remediación priorizado, son US$ 490. Esta salió gratis porque me la pediste tú.
+
+Eduardo Vera
+Remediación de vulnerabilidades y evidencia para SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)

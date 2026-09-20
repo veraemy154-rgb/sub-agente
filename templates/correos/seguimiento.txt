@@ -1,0 +1,21 @@
+SEGUIMIENTO (4 dias despues del primer correo)
+RESPONDE a tu propio correo para que quede en el mismo hilo, no abras uno nuevo.
+
+---
+Hi {nombre},
+
+Quick follow-up on my note about {repo}. The short version: three controls your buyers ask for that I couldn't find in the repo, and I can close the gap in about a week.
+
+If it's not a priority right now, a one-line "not now" is a useful answer too.
+
+Eduardo Vera
+Vulnerability remediation & security evidence for SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)
+---
+
+VARIANTES DEL ULTIMO PARRAFO (para no sonar a maquina cuando escribas a varios):
+- "If this isn't the right quarter for it, tell me and I'll check back later."
+- "If someone else owns this, pointing me to them would be enough."
+
+VARIANTES PARA ESPERAR MAS RESPUESTA (usa UNA sola):
+- "No pressure either way — just let me know."

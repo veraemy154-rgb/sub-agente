@@ -1,6 +1,23 @@
 """Sub-agentes por area de negocio."""
 
 AGENTS = {
+    "seguridad": {
+        "rol": "AppSec & Compliance Remediation Lead",
+        "prompt": (
+            "Auditamos exposicion a partir de informacion publica y convertimos cada hallazgo en "
+            "evidencia de control para SOC 2 / ISO 27001 / cuestionarios enterprise. "
+            "Prioriza por impacto sobre la auditoria y por esfuerzo de remediación. "
+            "Nunca propongas explotar ni acceder sin autorizacion escrita. "
+            "El entregable siempre es un plan que el cliente pueda ejecutar o comprarte."
+        ),
+        "keywords": [
+            "seguridad", "vulnerabilidad", "vulnerabilidades", "cve", "cves", "pentest",
+            "auditoria", "auditoría", "soc 2", "soc2", "iso 27001", "owasp", "parche",
+            "remediacion", "remediación", "secretos", "secrets", "dependencias",
+            "scan", "escaneo", "riesgo", "exposicion", "exposición", "brecha", "sast",
+            "ci", "pipeline", "hardening", "appsec", "compliance", "cumplimiento",
+        ],
+    },
     "seo": {
         "rol": "Senior SEO Strategist",
         "prompt": "Analiza intencion de busqueda, clustering semantico y brechas de contenido. Devuelve acciones priorizadas por impacto/esfuerzo.",
@@ -22,6 +39,7 @@ AGENTS = {
         "keywords": ["soporte", "ticket", "error", "incidencia", "ayuda", "no funciona", "bug", "caido"],
     },
 }
+
 
 def ejecutar(area: str, tarea: str) -> dict:
     agente = AGENTS[area]

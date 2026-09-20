@@ -1,0 +1,16 @@
+PARA: khoa@boompay.app
+ASUNTO: Before your founding security engineer starts
+
+Hi,
+
+I saw you're hiring a Founding Security Engineer to run SOC 2, vulnerability work and enterprise questionnaires.
+
+Those roles take two or three months to fill. Meanwhile the controls an audit or a customer questionnaire asks about don't build themselves — and whoever joins inherits whatever exists on their first day.
+
+I do the part that can start now: dependency scanning, static analysis and secret detection, with the evidence handed over ready to use. Fixed scope, about a week. Whoever you hire inherits it running.
+
+Want the detail of what I'd set up?
+
+Eduardo Vera
+Vulnerability remediation & security evidence for SOC 2 / ISO 27001
+[tu correo] · Caracas (UTC−4)

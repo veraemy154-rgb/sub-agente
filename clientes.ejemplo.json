@@ -1,0 +1,37 @@
+{
+  "_nota": "Copia este archivo a clientes.json y rellena. El script lo lee para generar informes y facturas.",
+  "clientes": [
+    {
+      "nombre": "Acme SaaS",
+      "contacto": "cto@acme.com",
+      "repos": ["acme/api", "acme/web"],
+      "plan": "pro",
+      "fee_usd": 1800,
+      "horas_extra": 0,
+      "tarifa_extra_usd": 95,
+      "responsable": "Tu Nombre - Seguridad Aplicada",
+      "notas": "En proceso de SOC 2 Type II. Auditoria prevista para diciembre.",
+      "excepciones": [
+        {
+          "id": "EXC-001",
+          "riesgo": "libreria X sin version parcheada",
+          "justificacion": "Sin parche disponible; mitigado con WAF, sin exposicion externa",
+          "aprobado_por": "CTO",
+          "revision": "2026-12-01"
+        }
+      ]
+    },
+    {
+      "nombre": "Logistica Norte",
+      "contacto": "finanzas@lognorte.com",
+      "repos": ["lognorte/plataforma"],
+      "plan": "base",
+      "fee_usd": 1200,
+      "horas_extra": 4,
+      "tarifa_extra_usd": 95,
+      "responsable": "Tu Nombre - Seguridad Aplicada",
+      "notas": "Cuestionario de seguridad de un cliente enterprise pendiente.",
+      "excepciones": []
+    }
+  ]
+}

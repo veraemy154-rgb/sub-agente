@@ -1,0 +1,82 @@
+name: Guardian de rama
+
+# Una sola sesion de agente debe escribir en esta rama. Ver
+# .github/SESION-AUTORIZADA.md para el contexto completo.
+#
+# No es un bloqueo duro (GitHub no permite bloquear por trailer sin branch
+# protection), pero falla en ROJO y deja constancia publica del commit infractor.
+# El objetivo es que se vea, no que pase desapercibido.
+
+on:
+  push:
+    branches: ['arena/**']
+  pull_request:
+    branches: ['arena/**']
+
+permissions:
+  contents: read
+
+jobs:
+  guardian:
+    name: Sesion autorizada
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determinar rango de commits
+        id: rango
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "desde=${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
+            echo "hasta=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            echo "desde=${{ github.event.before }}" >> $GITHUB_OUTPUT
+            echo "hasta=${{ github.event.after }}" >> $GITHUB_OUTPUT
+          else
+            echo "desde=$(git rev-parse HEAD~1)" >> $GITHUB_OUTPUT
+            echo "hasta=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verificar trailer de sesion en cambios de codigo
+        env:
+          DESDE: ${{ steps.rango.outputs.desde }}
+          HASTA: ${{ steps.rango.outputs.hasta }}
+        run: |
+          set -u
+          [ -z "$DESDE" ] || [ -z "$HASTA" ] && { echo "Sin rango, nada que revisar"; exit 0; }
+
+          MARCA="Sesion: 01a0a513"
+          INFRACTORES=""
+          REVISADOS=0
+
+          for c in $(git rev-list "$DESDE".."$HASTA" 2>/dev/null || echo ""); do
+            [ -z "$c" ] && continue
+            if git show --name-only --format= "$c" 2>/dev/null | grep -q '^app/'; then
+              REVISADOS=$((REVISADOS+1))
+              if ! git log -1 --format='%B' "$c" | grep -qF "$MARCA"; then
+                INFRACTORES="$INFRACTORES
+                  - $(git log -1 --format='%h %an: %s' "$c")"
+              fi
+            fi
+          done
+
+          echo "Commits que tocan app/: $REVISADOS"
+          if [ -n "$INFRACTORES" ]; then
+            echo "::error::${REVISADOS} commit(s) tocan app/ sin el trailer '${MARCA}'"
+            echo "$INFRACTORES"
+            echo ""
+            echo "Esto suele significar que OTRA SESION DE AGENTE esta escribiendo"
+            echo "en esta rama. Lee .github/SESION-AUTORIZADA.md antes de continuar."
+            echo ""
+            echo "Si el commit es tuyo y legitimo, rehazlo con el trailer:"
+            echo "  git commit --amend -m \"\$(git log -1 --format=%s)\" -m \"\n${MARCA}\""
+            exit 1
+          fi
+          echo "OK: todos los cambios de codigo llevan la marca de sesion autorizada."
+
+      - name: Aviso si aparecen co-autores desconocidos
+        run: |
+          echo "Autores de los ultimos 20 commits:"
+          git log -20 --format='  %h %an <%ae>' | sort -u
